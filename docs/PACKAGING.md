@@ -48,3 +48,7 @@ PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --status
 - MORPH is a low-latency heuristic; reports record method resolution and do not claim optimality.
 - Formal verification scope is as declared in upstream verificacion_formal (bounded domains / contracts).
 - Autonomous network reconfiguration / code mutation is out of scope for this packaging baseline.
+
+## Signed reports
+
+See [SIGNED_REPORTS.md](SIGNED_REPORTS.md) and JSON Schemas under `/schemas`.

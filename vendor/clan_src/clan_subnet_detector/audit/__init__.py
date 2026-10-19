@@ -1,12 +1,23 @@
-from .report import run_audit, AuditReport, write_report
-from .signing import sign_report_hmac, verify_report_hmac, SignedAudit, payload_digest
+"""Audit reports and cryptographic envelopes for external auditors."""
+
+from .report import AuditReport, Finding, run_audit, write_report
+from .schema import SCHEMA_VERSION, validate_report
+from .signing import (
+    attach_content_hash,
+    generate_hmac_secret,
+    sign_report_hmac,
+    verify_envelope_hmac,
+)
 
 __all__ = [
-    "run_audit",
     "AuditReport",
+    "Finding",
+    "run_audit",
     "write_report",
+    "SCHEMA_VERSION",
+    "validate_report",
+    "attach_content_hash",
+    "generate_hmac_secret",
     "sign_report_hmac",
-    "verify_report_hmac",
-    "SignedAudit",
-    "payload_digest",
+    "verify_envelope_hmac",
 ]

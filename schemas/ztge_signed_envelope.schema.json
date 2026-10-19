@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dcpracmatic-prog.github.io/Zero-Trust-Graph-Engine/schemas/ztge_signed_envelope.schema.json",
+  "title": "ZTGE Signed Audit Envelope",
+  "description": "Cryptographic envelope around a ZTGE audit report for external auditors.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["envelope_version", "payload", "integrity"],
+  "properties": {
+    "envelope_version": {
+      "type": "string",
+      "const": "ztge.envelope.v1"
+    },
+    "payload": {
+      "description": "The audit report object (schema ztge.audit.v1).",
+      "type": "object"
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alg", "content_hash", "signature", "key_id"],
+      "properties": {
+        "alg": {
+          "type": "string",
+          "enum": ["HMAC-SHA256", "Ed25519"],
+          "description": "Signature algorithm over the content_hash (hex) or over the canonical payload bytes."
+        },
+        "content_hash": {
+          "type": "string",
+          "description": "SHA-256 hex of canonical payload JSON.",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "signature": {
+          "type": "string",
+          "description": "Hex-encoded signature (HMAC or Ed25519)."
+        },
+        "key_id": {
+          "type": "string",
+          "description": "Opaque key identifier known to the auditor (e.g. hmac:prod-2026-10 or ed25519:auditor-1)."
+        },
+        "signed_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "organization": { "type": "string" },
+        "service": { "type": "string" },
+        "contact": { "type": "string" }
+      }
+    }
+  }
+}

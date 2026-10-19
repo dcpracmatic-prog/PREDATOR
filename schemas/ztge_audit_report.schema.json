@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dcpracmatic-prog.github.io/Zero-Trust-Graph-Engine/schemas/ztge_audit_report.schema.json",
+  "title": "ZTGE Audit Report",
+  "description": "Machine-readable audit report produced by Zero-Trust Graph Engine. Designed for independent re-verification by external auditors.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "timestamp_utc",
+    "engine",
+    "graph",
+    "findings",
+    "checks",
+    "content_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "ztge.audit.v1"
+    },
+    "report_id": {
+      "type": "string",
+      "description": "Stable opaque id for this report instance (UUID recommended).",
+      "minLength": 8,
+      "maxLength": 128
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO-8601 UTC timestamp when the audit completed."
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "const": "zero-trust-graph-engine" },
+        "version": { "type": "string" },
+        "clan_version": { "type": "string" },
+        "python": { "type": "string" },
+        "platform": { "type": "string" }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["n", "m", "density", "n_components"],
+      "properties": {
+        "n": { "type": "integer", "minimum": 0 },
+        "m": { "type": "integer", "minimum": 0 },
+        "density": { "type": "number", "minimum": 0, "maximum": 1 },
+        "n_components": { "type": "integer", "minimum": 0 },
+        "source": { "type": ["string", "null"] },
+        "digest_sha256": {
+          "type": ["string", "null"],
+          "description": "Optional SHA-256 of the canonical edge list used as input."
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "checks": {
+      "type": "object",
+      "description": "Named boolean automated checks. Keys are stable snake_case identifiers.",
+      "additionalProperties": { "type": "boolean" }
+    },
+    "notes": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": []
+    },
+    "content_hash": {
+      "type": "string",
+      "description": "SHA-256 hex digest of the canonical JSON of this object with content_hash set to empty string.",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "nodes", "size", "verified", "score"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["clique", "independent_set", "k_core", "densest_subgraph"]
+        },
+        "nodes": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0 }
+        },
+        "size": { "type": "integer", "minimum": 0 },
+        "verified": {
+          "type": "boolean",
+          "description": "True if an independent pure verifier accepted this finding."
+        },
+        "score": { "type": "number" },
+        "extra": {
+          "type": "object",
+          "description": "Kind-specific metadata. For independent_set MUST include method_requested and method_resolved when planner was used.",
+          "properties": {
+            "method_requested": {
+              "type": "string",
+              "enum": ["auto", "morph", "gwmin"]
+            },
+            "method_resolved": {
+              "type": "string",
+              "enum": ["auto", "morph", "gwmin"]
+            },
+            "fallback": { "type": "boolean" },
+            "reason": { "type": "string" },
+            "budget_ms": { "type": "integer" },
+            "seed": { "type": ["integer", "null"] },
+            "k": { "type": ["integer", "null"] },
+            "density": { "type": "number" },
+            "morph": { "type": ["object", "null"] }
+          },
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

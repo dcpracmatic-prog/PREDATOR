@@ -1,16 +1,16 @@
-# COMMONWEAVE Zero — graph metrics contract (Python-side pure functions)
+# COMMONWEAVE Zero / ZTGE — graph metrics contract (Python pure functions)
 name: graph_metrics
-version: "0.2.0"
+version: "0.3.0"
 language: python
 library: clan_subnet_detector.graph.metrics
 abi: pure_python
 description: >
-  Pure metric functions over the Graph ADT. No native code; listed here so
-  the Zero-Trust Graph Engine can bind contracts uniformly across layers.
+  Pure metric functions over the Graph ADT. Bound so the engine can treat
+  Python and native layers under the same contract surface.
 
 functions:
   - name: density
-    description: Edge density of G
+    description: Edge density of G (undirected: 2m / n(n-1))
     returns: {type: float64}
     parameters:
       - {name: g, type: Graph, direction: in}
@@ -18,8 +18,14 @@ functions:
       - {expr: "0.0 <= result <= 1.0"}
 
   - name: connected_components
-    description: List of connected components as sets of node ids
-    returns: {type: list_of_sets}
+    description: Connected components as lists of node ids
+    returns: {type: list_of_lists}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+
+  - name: degree_sequence
+    description: Degree of each node in 0..n-1 order
+    returns: {type: list_int}
     parameters:
       - {name: g, type: Graph, direction: in}
 
