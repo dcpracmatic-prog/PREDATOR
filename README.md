@@ -1,112 +1,62 @@
-# Zero-Trust Graph Engine (ZTGE)
+# Independent-set planner (GWMIN + MORPH)
 
-Unified architecture that combines three independently verifiable layers:
+Fast GWMIN heuristic and budgeted MORPH solver for the maximum independent set
+problem on undirected graphs, with **size-aware `auto` selection**.
 
-| Layer | Role | Component |
-|-------|------|-----------|
-| **MORPH** | Low-latency combinatorial muscle (Maximum Independent Set) | `vendor/morph_src` |
-| **Clan-Subnet Detector** | Domain brain — cliques, isolated subnetworks, dense cores, audit | `vendor/clan_src` |
-| **COMMONWEAVE Zero** | Trust shield — YAML contracts, generated adapters, differential verification, cryptographic seals | `vendor/cw_zero` + `contracts/` |
+## Key results (synthetic ER/BA, avg degree ≈ 6, 5 reps)
 
-**Value proposition:** extreme speed + mathematical independent verification + cryptographic traceability, without silent glue or unverifiable black boxes.
+- **Correctness:** all returned sets are independent (verified).
+- **Quality:** MORPH improves median size over GWMIN by roughly **0–3.6%** on ER; **~0%** on BA.
+- **Latency:** GWMIN grows with *n* (≈2 ms at n=200, hundreds of ms at n=5k). MORPH sits near its **time budget** (e.g. 100 ms). Cross-over around **n ≈ 1.5–1.7k**.
+- **`auto`:** uses **GWMIN when n < 1500**, MORPH when larger (if the binary is available). It does **not** pay the MORPH budget on tiny graphs.
 
-## Architecture
-
-```
-[ YAML contracts ] ──(COMMONWEAVE Zero generator)──> [ verified native adapters ]
-        │
-        ▼
-[ Graph / NetFlow / edge-list ] ──(Clan-Subnet Detector)──> [ findings + audit report ]
-        │                                                         │
-        │                              (optional) MORPH binary ───┘
-        ▼
-[ CSG / HMAC seal ] ──> immutable acceptance certificate
-```
-
-## Transparent MORPH integration
-
-The independent-set planner exposes three methods:
-
-| Method | Behaviour |
-|--------|-----------|
-| `gwmin` | Pure-Python GWMIN (always available) |
-| `morph` | Compiled `dump_morph`; falls back to GWMIN on failure |
-| `auto`  | Prefer MORPH when discoverable (default) |
-
-Every run records in the audit report:
-
-- `method_requested` / `method_resolved`
-- `fallback` flag and `reason`
-- MORPH binary path, budget, seed, wall time (when used)
+Reproduce:
 
 ```bash
-# Health check
-PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --status
-
-# Audit with transparent planner
-PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --demo --method auto --out results/
+cd vendor/morph_src && make dump_morph
+export MORPH_DUMP_BIN="$(pwd)/dump_morph"
+python benchmarks/run_benchmark.py          # or --quick
+# artifacts: results/<timestamp>_<commit>/{scaling.csv,report.json,report.md,*.png}
 ```
 
-## Expanded contracts
+## When to use which method
 
-Located in `contracts/` (mirrored under `vendor/cw_zero/contracts/`):
+| Situation | Method |
+|-----------|--------|
+| n ≪ 1500, need low latency | `gwmin` or `auto` |
+| n ≫ 1500, can spend ~100 ms | `morph` or `auto` |
+| Force pure Python | `gwmin` |
+| Force compiled path | `morph` (falls back if binary missing) |
 
-| Contract | Purpose |
-|----------|---------|
-| `matmul.yaml` | Dense float64 matrix multiply |
-| `stats.yaml` | `array_stats` + `histogram` |
-| `scale_clamp.yaml` | Scale + clamp with `hi >= lo` precondition |
-| `morph_mis.yaml` | Logical CLI contract for MORPH MIS + audit fields |
-| `graph_metrics.yaml` | Pure-Python density / components / is_independent / is_clique |
-
-Generate an adapter:
+## Quickstart (library)
 
 ```bash
-python vendor/cw_zero/generator/generate_adapter.py \
-  --contract contracts/matmul.yaml \
-  --lib vendor/cw_zero/c_src/libmatmul.so \
-  --out generated/matmul_adapter.py
+pip install -e ".[yaml]"
+export MORPH_DUMP_BIN=/path/to/dump_morph
+python -c "
+from clan_subnet_detector import Graph, plan_independent, is_independent
+g = Graph.from_edges(5, [(0,1),(1,2),(2,3)])
+S = plan_independent(g, method='auto', budget_ms=50)
+assert is_independent(g, S)
+print(S)
+"
 ```
 
-## Quick start
+## Limitations (honest)
 
-```bash
-# 1. Clan detector smoke
-PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --demo --method auto --out /tmp/ztge_demo
+- Benchmarks use **synthetic** ER/BA only; one average degree; few repetitions.
+- Validity is checked; maximality is reported separately and not always required.
+- MORPH is a **heuristic with a fixed budget**, not an exact MIS solver.
+- No claim of optimality or production network control.
 
-# 2. Status of MORPH discovery
-PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --status
-
-# 3. Engine orchestration helper
-python scripts/ztge_status.py
-```
-
-## Repository layout
+## Layout
 
 ```
-zero-trust-graph-engine/
-├── README.md                 # this file
-├── docs/ARCHITECTURE.md
-├── contracts/                # expanded YAML contracts (source of truth)
-├── scripts/ztge_status.py
-├── src/ztge/                 # thin orchestration package
-└── vendor/
-    ├── clan_src/             # Clan-Subnet Detector (patched for transparency)
-    ├── cw_zero/              # COMMONWEAVE Zero contracts, generator, c_src, seal
-    └── morph_src/            # MORPH C++ sources + build notes
+benchmarks/run_benchmark.py   # single source of CSV/JSON/MD/PNG
+results/                      # dated run folders (generated)
+vendor/clan_src/              # Python package
+vendor/morph_src/             # MORPH C++ sources (build dump_morph)
+contracts/ schemas/ docs/     # optional zero-trust / audit packaging
 ```
 
-## Design principles
-
-1. **Independent verification first** — every finding is re-checked by a pure function before it enters the report.
-2. **No silent fallbacks without trace** — planner resolution is always recorded.
-3. **Contracts as source of truth** — adapters are generated; glue is not hand-maintained.
-4. **Honest scope** — MORPH is a low-latency heuristic; formal proofs are bounded as declared in `verificacion_formal`.
-
-## Version
-
-ZTGE consolidation snapshot — 2026-10-19.
-
-## Packaging
-
-See [docs/PACKAGING.md](docs/PACKAGING.md) for SDK / B2B API readiness and next steps.
+Spanish notes: see `docs/` (architecture, signed reports, packaging).

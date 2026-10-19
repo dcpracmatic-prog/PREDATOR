@@ -8,6 +8,12 @@ Transparency contract
 ``plan_independent`` always returns vertices and, when ``trace_out`` is
 supplied, appends a dict describing which method actually ran (requested
 method, resolved method, binary path, budget, wall time, fallback reason).
+
+``auto`` policy
+---------------
+Prefer GWMIN on small graphs (default n < 1500) where wall time dominates any
+modest quality gain from MORPH. Prefer MORPH on larger graphs when the binary
+is available. Threshold is overridable via ``auto_n_threshold``.
 """
 
 from __future__ import annotations
@@ -15,6 +21,9 @@ from __future__ import annotations
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
 from ..graph.graph import Graph
+
+# Empirical crossover from BA/ER degree≈6 benches: GWMIN cheaper below ~1.5–1.7k.
+DEFAULT_AUTO_N_THRESHOLD = 1500
 
 
 def gwmin_independent(
@@ -82,6 +91,22 @@ def is_independent(g: Graph, nodes: Iterable[int]) -> bool:
     return True
 
 
+def is_maximal_independent(g: Graph, nodes: Iterable[int]) -> bool:
+    """True iff ``nodes`` is independent and every outsider is adjacent to it."""
+    node_set = set(nodes)
+    if not is_independent(g, node_set):
+        return False
+    for u in range(g.n):
+        if u in node_set:
+            continue
+        # u must have a neighbor in the set (or the set is empty and n>0 → not maximal)
+        if not any(v in node_set for v in g.adj[u]):
+            return False
+    if g.n > 0 and not node_set:
+        return False
+    return True
+
+
 def plan_independent(
     g: Graph,
     banned: Optional[Iterable[int]] = None,
@@ -91,6 +116,7 @@ def plan_independent(
     budget_ms: int = 100,
     seed: int = 1,
     trace_out: Optional[List[Dict[str, Any]]] = None,
+    auto_n_threshold: int = DEFAULT_AUTO_N_THRESHOLD,
 ) -> List[int]:
     """Public planner with transparent method resolution.
 
@@ -98,7 +124,8 @@ def plan_independent(
     -------
     gwmin : pure-Python GWMIN (always available).
     morph : compiled MORPH binary; falls back to GWMIN on failure.
-    auto  : prefer MORPH when discoverable, else GWMIN (recommended default).
+    auto  : size-aware selection — GWMIN when n < auto_n_threshold (default 1500),
+            else MORPH if available, else GWMIN. Never forces MORPH on tiny graphs.
     """
     requested = (method or "auto").lower().strip()
     if requested not in ("gwmin", "morph", "auto"):
@@ -111,29 +138,46 @@ def plan_independent(
         "reason": "",
         "morph": None,
         "size": 0,
+        "auto_n_threshold": auto_n_threshold,
+        "graph_n": g.n,
     }
 
-    def _gwmin(reason: str = "") -> List[int]:
-        verts = gwmin_independent(g, banned=banned, k=k, weights=weights)
-        trace["resolved"] = "gwmin"
-        if reason:
-            trace["fallback"] = requested in ("morph", "auto")
-            trace["reason"] = reason
-        else:
-            trace["reason"] = "explicit gwmin"
+    def _finish(verts: List[int]) -> List[int]:
         trace["size"] = len(verts)
         if trace_out is not None:
-            trace_out.append(trace)
+            trace_out.append(dict(trace))
         return verts
 
+    def _gwmin(reason: str, *, fallback: bool = False) -> List[int]:
+        verts = gwmin_independent(g, banned=banned, k=k, weights=weights)
+        trace["resolved"] = "gwmin"
+        trace["fallback"] = fallback
+        trace["reason"] = reason
+        return _finish(verts)
+
     if requested == "gwmin":
-        return _gwmin()
+        return _gwmin("explicit gwmin")
 
     from .morph_adapter import morph_independent, morph_status
 
     status = morph_status()
-    if not status.get("available"):
-        return _gwmin(reason=status.get("reason") or "MORPH unavailable")
+
+    # --- auto: prefer cheap GWMIN below crossover ---
+    if requested == "auto":
+        if g.n < auto_n_threshold:
+            return _gwmin(
+                f"auto: n={g.n} < threshold={auto_n_threshold} → gwmin",
+                fallback=False,
+            )
+        if not status.get("available"):
+            return _gwmin(
+                status.get("reason") or "auto: MORPH unavailable → gwmin",
+                fallback=True,
+            )
+        # fall through to MORPH for large n
+        pass
+    elif requested == "morph" and not status.get("available"):
+        return _gwmin(status.get("reason") or "MORPH unavailable", fallback=True)
 
     morph_info: List = []
     try:
@@ -145,12 +189,26 @@ def plan_independent(
             seed=seed,
             info_out=morph_info,
         )
+        # Safety: if MORPH is smaller than a free GWMIN would be, prefer GWMIN
+        # only when sizes differ and we are in auto (quality floor).
+        if requested == "auto":
+            gw = gwmin_independent(g, banned=banned, k=k, weights=weights)
+            if len(gw) > len(verts):
+                trace["resolved"] = "gwmin"
+                trace["fallback"] = True
+                trace["reason"] = (
+                    f"auto: MORPH size {len(verts)} < GWMIN {len(gw)}; prefer GWMIN"
+                )
+                trace["morph"] = morph_info[0].to_dict() if morph_info else status
+                return _finish(gw)
         trace["resolved"] = "morph"
-        trace["reason"] = "MORPH binary used"
+        trace["reason"] = (
+            "MORPH binary used"
+            if requested == "morph"
+            else f"auto: n={g.n} >= threshold={auto_n_threshold} → morph"
+        )
+        trace["fallback"] = False
         trace["morph"] = morph_info[0].to_dict() if morph_info else status
-        trace["size"] = len(verts)
-        if trace_out is not None:
-            trace_out.append(trace)
-        return verts
+        return _finish(verts)
     except Exception as e:
-        return _gwmin(reason=f"MORPH failed: {e}")
+        return _gwmin(f"MORPH failed: {e}", fallback=True)

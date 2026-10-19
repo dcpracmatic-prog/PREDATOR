@@ -9,7 +9,7 @@ __version__ = "0.2.2"
 from .graph.graph import Graph, Edge
 from .graph.metrics import density, degree_sequence, connected_components
 from .graph.temporal import TemporalGraph, EdgeEvent
-from .detection.independent_set import plan_independent, gwmin_independent, is_independent
+from .detection.independent_set import plan_independent, gwmin_independent, is_independent, is_maximal_independent
 from .detection.morph_adapter import morph_status, MorphRunInfo
 from .detection.clique import greedy_clique, is_clique
 from .detection.dense import k_core, core_number, densest_subgraph_peeling
@@ -37,6 +37,7 @@ __all__ = [
     "MorphRunInfo",
     "gwmin_independent",
     "is_independent",
+    "is_maximal_independent",
     "greedy_clique",
     "is_clique",
     "k_core",
