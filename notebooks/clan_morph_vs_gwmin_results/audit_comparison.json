@@ -1,0 +1,49 @@
+{
+  "gwmin_audit_ms": 287.8950369999984,
+  "auto_audit_ms": 320.655467999984,
+  "gwmin_ind_size": 1017,
+  "auto_ind_size": 1018,
+  "gwmin_verified": true,
+  "auto_verified": true,
+  "auto_extra": {
+    "method_requested": "auto",
+    "method_resolved": "morph",
+    "fallback": false,
+    "reason": "MORPH binary used",
+    "morph": {
+      "method": "morph",
+      "binary": "dump_morph",
+      "binary_resolved": "/tmp/dump_morph",
+      "budget_ms": 100,
+      "seed": 42,
+      "n_input": 2000,
+      "m_input": 5994,
+      "n_after_ban": 2000,
+      "size": 1018,
+      "wall_ms": 108.2427729999722,
+      "returncode": 0,
+      "ok": true,
+      "error": "",
+      "notes": []
+    },
+    "k": null,
+    "budget_ms": 100,
+    "seed": 42
+  },
+  "gwmin_checks": {
+    "all_findings_verified": true,
+    "clique_verified": true,
+    "independent_set_verified": true,
+    "dense_verified": true,
+    "graph_non_empty": true,
+    "planner_fallback": false
+  },
+  "auto_checks": {
+    "all_findings_verified": true,
+    "clique_verified": true,
+    "independent_set_verified": true,
+    "dense_verified": true,
+    "graph_non_empty": true,
+    "planner_fallback": false
+  }
+}

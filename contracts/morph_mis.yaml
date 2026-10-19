@@ -1,0 +1,52 @@
+# COMMONWEAVE Zero — MORPH Maximum Independent Set (logical contract)
+# This contract documents the external interface of the dump_morph binary so that
+# audit pipelines and adapter generators can treat it as a first-class component.
+name: morph_mis
+version: "1.5.0"
+language: cpp
+library: dump_morph
+abi: cli
+description: >
+  Low-latency heuristic Maximum Independent Set solver (MORPH v1.5).
+  Input is a DIMACS-like .gph file; output is a 1-indexed vertex list.
+  Guarantees: returned set is an independent set of the input graph
+  (verified externally by is_independent). Does not claim optimality.
+
+cli:
+  invocation: "dump_morph <graph.gph> <budget_ms> <seed>"
+  input_format: |
+    p edge <n> <m>
+    e <u> <v>          # 1-indexed undirected edges
+  output_format: |
+    # <size>
+    <v1>
+    <v2>
+    ...                # 1-indexed vertices in the independent set
+
+functions:
+  - name: morph_independent
+    description: Compute a feasible independent set under a wall-clock budget
+    returns:
+      type: vertex_list
+      meaning: zero_indexed_vertices_after_adapter
+    requires:
+      - {expr: "budget_ms >= 1", code: 2}
+      - {expr: "n >= 0", code: 2}
+    parameters:
+      - {name: graph,     type: graph, direction: in, format: gph}
+      - {name: budget_ms, type: uint32, constraints: [1, 600000]}
+      - {name: seed,      type: int32, constraints: [0, 2147483647]}
+    ensures:
+      - {expr: "is_independent(graph, result)", code: "verifier"}
+      - {expr: "len(result) <= n", code: "verifier"}
+
+audit:
+  independent_verification: required
+  fallback: gwmin
+  transparency_fields:
+    - binary_resolved
+    - budget_ms
+    - seed
+    - wall_ms
+    - size
+    - fallback_reason

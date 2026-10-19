@@ -1,0 +1,96 @@
+# COMMONWEAVE Zero — declarative contract for matmul
+# This is the sole source of truth for generation and verification.
+
+name: matmul
+version: "0.1.0"
+language: c
+library: libmatmul.so
+abi: c99
+
+functions:
+  - name: matmul
+    description: Dense double-precision matrix multiplication C = A * B (row-major)
+    returns:
+      type: int
+      meaning: error_code
+      values:
+        0: OK
+        1: NULL_POINTER
+        2: INVALID_DIMENSION
+        3: OVERFLOW
+        4: ALIGNMENT
+    parameters:
+      - name: A
+        type: pointer
+        element: float64
+        direction: in
+        layout: row_major
+        shape: [m, k]
+      - name: B
+        type: pointer
+        element: float64
+        direction: in
+        layout: row_major
+        shape: [k, n]
+      - name: C
+        type: pointer
+        element: float64
+        direction: out
+        layout: row_major
+        shape: [m, n]
+      - name: m
+        type: size_t
+        constraints: [1, 10000]
+      - name: k
+        type: size_t
+        constraints: [1, 10000]
+      - name: n
+        type: size_t
+        constraints: [1, 10000]
+    preconditions:
+      - A != null
+      - B != null
+      - C != null
+      - m >= 1 and m <= 10000
+      - k >= 1 and k <= 10000
+      - n >= 1 and n <= 10000
+    postconditions:
+      - result == 0 implies C is exactly A*B within float64 precision
+      - result != 0 implies C is unmodified (or undefined; treated as error)
+    memory:
+      ownership: caller
+      copy: none_required  # zero-copy preferred when layouts match
+      alignment: 8
+
+  - name: scale_clamp
+    description: Element-wise scale and clamp
+    returns:
+      type: int
+      meaning: error_code
+    parameters:
+      - name: in
+        type: pointer
+        element: float64
+        direction: in
+        shape: [len]
+      - name: out
+        type: pointer
+        element: float64
+        direction: out
+        shape: [len]
+      - name: len
+        type: size_t
+        constraints: [1, 1000000]
+      - name: scale
+        type: float64
+      - name: lo
+        type: float64
+      - name: hi
+        type: float64
+
+safety:
+  isolation: optional   # process isolation recommended for untrusted binaries
+  bounds_check: required
+  null_check: required
+
+reference_model: pure_python  # used by differential verifier

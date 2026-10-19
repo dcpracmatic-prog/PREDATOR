@@ -1,0 +1,38 @@
+# COMMONWEAVE Zero — graph metrics contract (Python-side pure functions)
+name: graph_metrics
+version: "0.2.0"
+language: python
+library: clan_subnet_detector.graph.metrics
+abi: pure_python
+description: >
+  Pure metric functions over the Graph ADT. No native code; listed here so
+  the Zero-Trust Graph Engine can bind contracts uniformly across layers.
+
+functions:
+  - name: density
+    description: Edge density of G
+    returns: {type: float64}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+    ensures:
+      - {expr: "0.0 <= result <= 1.0"}
+
+  - name: connected_components
+    description: List of connected components as sets of node ids
+    returns: {type: list_of_sets}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+
+  - name: is_independent
+    description: True iff nodes form an independent set of g
+    returns: {type: bool}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+      - {name: nodes, type: list_int, direction: in}
+
+  - name: is_clique
+    description: True iff nodes form a clique of g
+    returns: {type: bool}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+      - {name: nodes, type: list_int, direction: in}

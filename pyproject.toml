@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "zero-trust-graph-engine"
+version = "0.1.0"
+description = "Zero-Trust Graph Engine — graph optimization, audited detection, and contract-verified native adapters"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "See LICENSE" }
+authors = [{ name = "dcpracmatic-prog" }]
+dependencies = []
+
+[project.optional-dependencies]
+yaml = ["pyyaml>=6.0"]
+crypto = ["cryptography>=41.0"]
+dev = ["pytest>=7.0", "pyyaml>=6.0"]
+
+[project.scripts]
+ztge-status = "ztge_status_entry:main"
+clan-detect = "clan_subnet_detector.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src", "vendor/clan_src"]
+include = ["ztge*", "clan_subnet_detector*"]
+
+[tool.setuptools.package-data]
+clan_subnet_detector = ["py.typed"]

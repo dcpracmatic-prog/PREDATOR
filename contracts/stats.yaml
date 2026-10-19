@@ -1,0 +1,46 @@
+# COMMONWEAVE Zero — contract for the second component (stats / histogram)
+name: stats
+version: "0.1.0"
+language: c
+library: libstats.so
+abi: c99
+value_range_code: 5          # a Python int not representable in the declared C type
+
+structs:
+  - name: cw_stats
+    fields:
+      - {name: count,    type: size_t}
+      - {name: mean,     type: float64}
+      - {name: variance, type: float64}
+      - {name: min,      type: int32}
+      - {name: max,      type: int32}
+
+functions:
+  - name: array_stats
+    description: Count, mean, population variance, min, max of an int32 buffer
+    returns:
+      type: int
+      meaning: error_code
+      values: {0: OK, 1: NULL_POINTER, 2: INVALID_DIMENSION, 3: OVERFLOW, 4: ALIGNMENT, 5: VALUE_OUT_OF_RANGE}
+    memory: {copy: none_required}
+    parameters:
+      - {name: data, type: pointer, element: int32, direction: in, shape: [len]}
+      - {name: len,  type: size_t, constraints: [1, 1000000], violation_codes: {below: 2, above: 3}}
+      - {name: out,  type: pointer, element: cw_stats, direction: out}
+
+  - name: histogram
+    description: Equal-width histogram of int32 values over [lo, hi); out-of-range values ignored
+    returns:
+      type: int
+      meaning: error_code
+      values: {0: OK, 1: NULL_POINTER, 2: INVALID_DIMENSION, 3: OVERFLOW, 4: ALIGNMENT, 5: VALUE_OUT_OF_RANGE}
+    memory: {copy: none_required}
+    requires:
+      - {expr: "hi > lo", code: 2}
+    parameters:
+      - {name: data,  type: pointer, element: int32,  direction: in,  shape: [len]}
+      - {name: len,   type: size_t, constraints: [1, 1000000], violation_codes: {below: 2, above: 3}}
+      - {name: lo,    type: int32}
+      - {name: hi,    type: int32}
+      - {name: bins,  type: pointer, element: uint32, direction: out, shape: [nbins]}
+      - {name: nbins, type: size_t, constraints: [1, 4096], violation_codes: {below: 2, above: 3}}

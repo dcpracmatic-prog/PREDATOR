@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.so
+*.o
+.venv/
+venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+results/
+dump_morph
+bin/dump_morph
+vendor/morph_src/dump_morph
+morph_v15
+morph_qoblib_solver
+.DS_Store

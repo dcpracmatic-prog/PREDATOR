@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clan-subnet-detector"
+version = "0.2.0-mvp"
+description = "MVP detector of cliques and isolated subnetworks for cybersecurity and network analysis, with simplified independent audit"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary (see LICENSE)" }
+authors = [{ name = "dcpracmatic-prog" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+clan-detect = "clan_subnet_detector.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+clan_subnet_detector = ["py.typed"]
