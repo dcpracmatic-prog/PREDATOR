@@ -1,85 +1,165 @@
-# Independent-set planner (GWMIN + MORPH)
+# Zero-Trust Graph Engine (ZTGE)
 
-Fast GWMIN heuristic and budgeted MORPH solver for the maximum independent set
-problem on undirected graphs, with **size-aware `auto` selection**.
+Motor de optimización y análisis de grafos de baja latencia que combina heurísticas en C++ (`MORPH`) con un pipeline de detección, auditoría y verificación reutilizable desde Python.
 
-## Key results (synthetic ER/BA, avg degree ≈ 6, 5 reps)
+## Características principales
 
-- **Correctness:** all returned sets are independent (verified).
-- **Quality:** MORPH improves median size over GWMIN by roughly **0–3.6%** on ER; **~0%** on BA.
-- **Latency:** GWMIN grows with *n* (≈2 ms at n=200, hundreds of ms at n=5k). MORPH sits near its **time budget** (e.g. 100 ms). Cross-over around **n ≈ 1.5–1.7k**.
-- **`auto`:** uses **GWMIN when n < 1500**, MORPH when larger (if the binary is available). It does **not** pay the MORPH budget on tiny graphs.
+- **Latencia acotada:** `MORPH` respeta un presupuesto de tiempo configurable (p. ej. 50–100 ms); el tiempo de pared se mantiene cerca de ese techo en grafos grandes.
+- **Enrutamiento inteligente (`auto`):** elige `GWMIN` (puro Python, muy rápido) cuando el grafo es pequeño (`n < 1500` por defecto) y `MORPH` cuando escala o el binario está disponible.
+- **Verificación de correctitud:** todo conjunto independiente se revalida con un predicado puro (`is_independent`) antes de aceptarse en informes o APIs.
+- **Informes auditables (opcional):** esquema `ztge.audit.v1` y sobre firmado HMAC/Ed25519 para consumo por terceros (`docs/SIGNED_REPORTS.md`).
 
-Reproduce:
+---
+
+## Requisitos
+
+- Python ≥ 3.10
+- Compilador C++17 (`g++`) para construir `dump_morph`
+- Opcional: `pyyaml`, `ortools` (benchmarks exactos), `cryptography` (firmas Ed25519)
+
+---
+
+## Instalación
 
 ```bash
-cd vendor/morph_src && make dump_morph
-export MORPH_DUMP_BIN="$(pwd)/dump_morph"
-python benchmarks/run_benchmark.py          # or --quick
-# artifacts: results/<timestamp>_<commit>/{scaling.csv,report.json,report.md,*.png}
+git clone https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine.git
+cd Zero-Trust-Graph-Engine
+
+# Binario MORPH
+make build-morph
+export MORPH_DUMP_BIN="$(pwd)/vendor/morph_src/dump_morph"
+# Si el sistema de archivos no permite ejecutar desde el árbol del repo:
+# cp vendor/morph_src/dump_morph /tmp/dump_morph && chmod +x /tmp/dump_morph
+# export MORPH_DUMP_BIN=/tmp/dump_morph
+
+# Paquete editable
+pip install -e ".[yaml,dev]"
 ```
 
-## When to use which method
-
-| Situation | Method |
-|-----------|--------|
-| n ≪ 1500, need low latency | `gwmin` or `auto` |
-| n ≫ 1500, can spend ~100 ms | `morph` or `auto` |
-| Force pure Python | `gwmin` |
-| Force compiled path | `morph` (falls back if binary missing) |
-
-## Quickstart (library)
+Comprueba el entorno:
 
 ```bash
-pip install -e ".[yaml]"
-export MORPH_DUMP_BIN=/path/to/dump_morph
-python -c "
+PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --status
+```
+
+---
+
+## Uso rápido
+
+```python
 from clan_subnet_detector import Graph, plan_independent, is_independent
-g = Graph.from_edges(5, [(0,1),(1,2),(2,3)])
-S = plan_independent(g, method='auto', budget_ms=50)
-assert is_independent(g, S)
-print(S)
-"
+
+# 1. Grafo no dirigido a partir de aristas (nodos 0..n-1)
+g = Graph.from_edges(5, [(0, 1), (1, 2), (2, 3)])
+
+# 2. Conjunto independiente con selección automática
+solution = plan_independent(g, method="auto", budget_ms=50, seed=1)
+
+# 3. Verificar correctitud
+assert is_independent(g, solution)
+print("Conjunto independiente:", solution)
 ```
 
+### Métodos del planificador
 
-## Benchmark modes
+| `method` | Comportamiento |
+|----------|----------------|
+| `auto` | `GWMIN` si `n < auto_n_threshold` (1500); si no, `MORPH` cuando el binario existe |
+| `gwmin` | Solo heurística Python (siempre disponible) |
+| `morph` | Solo binario `dump_morph`; si falla, el planificador puede degradar a `GWMIN` |
+
+```python
+from clan_subnet_detector import plan_independent
+
+trace = []
+S = plan_independent(
+    g,
+    method="auto",
+    budget_ms=100,
+    seed=42,
+    trace_out=trace,
+)
+print(trace[0]["resolved"], trace[0]["reason"])
+```
+
+### Auditoría con informe (JSON / Markdown / sobre firmado)
+
+```python
+from clan_subnet_detector import Graph, run_audit, write_report
+import os
+
+g = Graph.from_edges(6, [(0, 1), (1, 2), (2, 3), (3, 4)])
+report = run_audit(g, method="auto", budget_ms=50, seed=1)
+
+os.environ["ZTGE_HMAC_SECRET"] = "hex:" + "ab" * 32  # ejemplo; use un secreto real
+paths = write_report(report, "out/", sign=True, key_id="hmac:dev")
+print(paths)  # json, markdown, signed
+```
+
+---
+
+## CLI
 
 ```bash
-python benchmarks/run_benchmark.py --mode scaling          # size ladder
-python benchmarks/run_benchmark.py --mode pareto           # quality vs MORPH budget (10/50/100/500)
-python benchmarks/run_benchmark.py --mode exact            # gap to CP-SAT optimum (n≤80, needs ortools)
-python benchmarks/run_benchmark.py --mode all --quick      # smoke all modes
-make bench-quick
+PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --status
+PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --demo --method auto
 ```
 
+---
 
-Degree and family sweeps:
+## Benchmarks locales
+
+Un solo script genera CSV, JSON, Markdown y gráficos en `results/<UTC>_<commit>/`:
 
 ```bash
-python benchmarks/run_benchmark.py --mode scaling --avg-deg-list 3,6,12 --families ER,BA,GRID
-python benchmarks/run_benchmark.py --mode exact --avg-deg-list 3,6 --families ER,BA,GRID --n-list 20,40,60
+python benchmarks/run_benchmark.py --mode scaling
+python benchmarks/run_benchmark.py --mode pareto
+python benchmarks/run_benchmark.py --mode exact          # óptimo n≤24 (DP) / OR-Tools si está
+python benchmarks/run_benchmark.py --mode all --quick
+
+# Pareto en ER denso (grado medio ≈ 12)
+make bench-pareto-dense
 ```
 
-Dense-ER Pareto notes: [docs/PARETO_ER_D12.md](docs/PARETO_ER_D12.md).
+Opciones útiles: `--families ER,BA,GRID`, `--avg-deg-list 3,6,12`, `--budgets 10,50,100,500`.
 
-Artifacts land in `results/<UTC>_<commit>/` (CSV + report.json + report.md + PNG).
+Notas de diseño y lecturas de rendimiento: `docs/PARETO_ER_D12.md`, `docs/ARCHITECTURE.md`.
 
-## Limitations (honest)
+---
 
-- Benchmarks use **synthetic** ER/BA only; one average degree; few repetitions.
-- Validity is checked; maximality is reported separately and not always required.
-- MORPH is a **heuristic with a fixed budget**, not an exact MIS solver.
-- No claim of optimality or production network control.
-
-## Layout
+## Estructura del repositorio
 
 ```
-benchmarks/run_benchmark.py   # single source of CSV/JSON/MD/PNG
-results/                      # dated run folders (generated)
-vendor/clan_src/              # Python package
-vendor/morph_src/             # MORPH C++ sources (build dump_morph)
-contracts/ schemas/ docs/     # optional zero-trust / audit packaging
+vendor/clan_src/     # Paquete Python (planificador, auditoría, grafo)
+vendor/morph_src/    # Fuentes C++ de MORPH → dump_morph
+vendor/cw_zero/      # Contratos / generador de adaptadores
+contracts/           # Contratos YAML declarativos
+schemas/             # JSON Schema de informes firmados
+benchmarks/          # run_benchmark.py
+docs/                # Arquitectura, packaging, reportes firmados
 ```
 
-Spanish notes: see `docs/` (architecture, signed reports, packaging).
+---
+
+## Documentación adicional
+
+| Documento | Contenido |
+|-----------|-----------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Capas del motor |
+| [docs/PACKAGING.md](docs/PACKAGING.md) | Listo para SDK / API B2B |
+| [docs/SIGNED_REPORTS.md](docs/SIGNED_REPORTS.md) | Esquema `ztge.audit.v1` y sobres HMAC/Ed25519 |
+| [docs/PARETO_ER_D12.md](docs/PARETO_ER_D12.md) | Calidad vs presupuesto en grafos densos |
+
+---
+
+## Limitaciones
+
+- `MORPH` es una **heurística con presupuesto de tiempo**, no un solver exacto de MIS.
+- Los benchmarks publicados usan grafos sintéticos (ER, BA, rejilla); valide en sus datos reales.
+- La reconfiguración autónoma de redes queda fuera del alcance de este empaquetado.
+
+---
+
+## Licencia
+
+Este proyecto se distribuye bajo los términos de la **GNU Affero General Public License v3.0 (AGPL-3.0)**. Consulte el archivo [`LICENSE`](LICENSE) para el texto completo.
