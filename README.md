@@ -42,6 +42,19 @@ print(S)
 "
 ```
 
+
+## Benchmark modes
+
+```bash
+python benchmarks/run_benchmark.py --mode scaling          # size ladder
+python benchmarks/run_benchmark.py --mode pareto           # quality vs MORPH budget (10/50/100/500)
+python benchmarks/run_benchmark.py --mode exact            # gap to CP-SAT optimum (n≤80, needs ortools)
+python benchmarks/run_benchmark.py --mode all --quick      # smoke all modes
+make bench-quick
+```
+
+Artifacts land in `results/<UTC>_<commit>/` (CSV + report.json + report.md + PNG).
+
 ## Limitations (honest)
 
 - Benchmarks use **synthetic** ER/BA only; one average degree; few repetitions.

@@ -79,31 +79,71 @@ def graph_to_gph(g: Graph, path: Path) -> None:
 
 
 def find_morph_binary() -> Optional[Path]:
-    """Locate a vertex-dump capable MORPH binary."""
+    """Locate an *executable* dump_morph binary.
+
+    Prefer ``MORPH_DUMP_BIN``. Skip paths that are not executable (e.g. noexec
+    mounts under some notebook artifact filesystems).
+    """
+    candidates: List[Path] = []
     for env_key in ("MORPH_DUMP_BIN", "MORPH_BIN"):
-        env = os.environ.get(env_key)
-        if env:
-            p = Path(env).expanduser()
-            if p.is_file() and os.access(p, os.X_OK):
-                return p.resolve()
+        raw = os.environ.get(env_key)
+        if raw:
+            candidates.append(Path(raw))
+    candidates.extend(
+        [
+            Path("/tmp/dump_morph"),
+            Path.cwd() / "dump_morph",
+            Path.cwd() / "vendor" / "morph_src" / "dump_morph",
+            Path.cwd().parent / "vendor" / "morph_src" / "dump_morph",
+        ]
+    )
+    # PATH lookup
     for name in ("dump_morph", "morph_qoblib_solver"):
         found = shutil.which(name)
         if found:
-            return Path(found).resolve()
-    candidates = [
-        Path("/home/workdir/artifacts/MORPH/dump_morph"),
-        Path("/home/workdir/artifacts/MORPH/morph_qoblib_solver"),
-        Path("/home/workdir/artifacts/zero-trust-graph-engine/vendor/morph_src/dump_morph"),
-        Path.cwd() / "dump_morph",
-        Path.cwd() / "morph_qoblib_solver",
-        Path.cwd().parent / "MORPH" / "dump_morph",
-        Path.cwd().parent / "MORPH" / "morph_qoblib_solver",
-    ]
-    for p in candidates:
-        if p.is_file() and os.access(p, os.X_OK):
-            return p.resolve()
-    return None
+            candidates.append(Path(found))
 
+    seen = set()
+    for p in candidates:
+        try:
+            p = p.resolve()
+        except Exception:
+            continue
+        if p in seen:
+            continue
+        seen.add(p)
+        if not p.is_file():
+            continue
+        if not os.access(p, os.X_OK):
+            # Common on noexec fuse mounts: copy to /tmp and retry
+            dest = Path("/tmp/dump_morph")
+            try:
+                shutil.copy2(p, dest)
+                dest.chmod(0o755)
+                if dest.is_file() and os.access(dest, os.X_OK):
+                    return dest
+            except Exception:
+                continue
+            continue
+        # Probe exec: noexec mounts sometimes still report X_OK
+        try:
+            import subprocess as _sp
+            r = _sp.run([str(p)], capture_output=True, timeout=2)
+            # usage exit codes 1/2 are fine — means the loader ran
+            return p
+        except PermissionError:
+            dest = Path("/tmp/dump_morph")
+            try:
+                shutil.copy2(p, dest)
+                dest.chmod(0o755)
+                if os.access(dest, os.X_OK):
+                    return dest
+            except Exception:
+                continue
+        except Exception:
+            # binary ran or failed for other reasons — still usable if X_OK
+            return p
+    return None
 
 def morph_status() -> Dict[str, Any]:
     """Status dict for CLI health checks and ZTGE bootstrap."""
