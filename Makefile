@@ -26,3 +26,10 @@ bench-exact: build-morph
 bench-all: build-morph
 	MORPH_DUMP_BIN=$${MORPH_DUMP_BIN:-$(PWD)/vendor/morph_src/dump_morph} \
 	PYTHONPATH=vendor/clan_src python benchmarks/run_benchmark.py --mode all
+
+bench-pareto-dense: build-morph
+	MORPH_DUMP_BIN=$${MORPH_DUMP_BIN:-$(PWD)/vendor/morph_src/dump_morph} \
+	PYTHONPATH=vendor/clan_src python benchmarks/run_benchmark.py --mode pareto \
+	  --families ER --avg-deg-list 12 \
+	  --n-list 200,500,1000,2000 \
+	  --budgets 10,50,100,500 --reps 5 --seed 42

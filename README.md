@@ -61,6 +61,8 @@ python benchmarks/run_benchmark.py --mode scaling --avg-deg-list 3,6,12 --famili
 python benchmarks/run_benchmark.py --mode exact --avg-deg-list 3,6 --families ER,BA,GRID --n-list 20,40,60
 ```
 
+Dense-ER Pareto notes: [docs/PARETO_ER_D12.md](docs/PARETO_ER_D12.md).
+
 Artifacts land in `results/<UTC>_<commit>/` (CSV + report.json + report.md + PNG).
 
 ## Limitations (honest)
