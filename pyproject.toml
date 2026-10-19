@@ -16,6 +16,7 @@ dependencies = []
 yaml = ["pyyaml>=6.0"]
 crypto = ["cryptography>=41.0"]
 dev = ["pytest>=7.0", "pyyaml>=6.0"]
+exact = ["ortools>=9.0"]
 
 [project.scripts]
 ztge-status = "ztge_status_entry:main"

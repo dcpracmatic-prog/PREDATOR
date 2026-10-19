@@ -91,6 +91,55 @@ def barabasi_albert(n: int, m: int, seed: int) -> Graph:
     return Graph.from_edges(n, edges, directed=False)
 
 
+
+def grid_graph(n: int, seed: int = 0) -> Graph:
+    """Approximate n-node 2D grid (planar). Uses floor(sqrt(n)) x ceil rows.
+
+    ``seed`` is accepted for API uniformity; the grid is deterministic.
+    """
+    import math
+    if n <= 0:
+        return Graph.from_edges(0, [], directed=False)
+    w = int(math.floor(math.sqrt(n)))
+    if w < 1:
+        w = 1
+    h = (n + w - 1) // w
+    edges = []
+    def vid(r, c):
+        return r * w + c
+    for r in range(h):
+        for c in range(w):
+            u = vid(r, c)
+            if u >= n:
+                continue
+            if c + 1 < w:
+                v = vid(r, c + 1)
+                if v < n:
+                    edges.append((u, v))
+            if r + 1 < h:
+                v = vid(r + 1, c)
+                if v < n:
+                    edges.append((u, v))
+    return Graph.from_edges(n, edges, directed=False)
+
+
+def build_families(family_names: List[str], avg_deg: float):
+    """Return list of (name, builder(n, seed)->Graph). GRID is not expanded here."""
+    out = []
+    for name in family_names:
+        key = name.strip().upper()
+        if key == "ER":
+            out.append((f"ER_d{avg_deg:g}", lambda n, seed, d=avg_deg: erdos_renyi(n, d, seed)))
+        elif key == "BA":
+            m = max(1, int(round(avg_deg / 2)))
+            out.append((f"BA_m{m}", lambda n, seed, mm=m: barabasi_albert(n, mm, seed)))
+        elif key in ("GRID", "PLANAR"):
+            continue  # added once by caller
+        else:
+            raise ValueError(f"Unknown family {name!r}; use ER, BA, GRID")
+    return out
+
+
 def median(xs: Sequence[float]) -> float:
     s = sorted(float(x) for x in xs)
     return float(s[len(s) // 2])
@@ -102,18 +151,110 @@ def iqr(xs: Sequence[float]) -> Tuple[float, float]:
     return float(s[n // 4]), float(s[(3 * n) // 4])
 
 
+
+def exact_mis_branch(
+    g: Graph, time_limit_s: float = 10.0
+) -> Tuple[Optional[List[int]], Optional[int], str]:
+    """Exact MIS: bit DP for n<=24, otherwise greedy-assisted branch-and-bound."""
+    import time as _time
+
+    n = g.n
+    if n == 0:
+        return [], 0, "OPTIMAL"
+
+    # adjacency bitmasks for n<=24
+    if n <= 24:
+        mask_all = (1 << n) - 1
+        adj_mask = [0] * n
+        for u in range(n):
+            m = 0
+            for v in g.adj[u]:
+                if 0 <= v < n:
+                    m |= 1 << v
+            adj_mask[u] = m
+        # dp[S] not stored fully — recursive with memo on remaining set
+        memo = {}
+
+        def dfs(rest: int) -> int:
+            if rest == 0:
+                return 0
+            if rest in memo:
+                return memo[rest]
+            # pick LSB
+            u = (rest & -rest).bit_length() - 1
+            # skip u
+            a = dfs(rest ^ (1 << u))
+            # take u
+            b = 1 + dfs(rest & ~adj_mask[u] & ~(1 << u))
+            best = a if a >= b else b
+            memo[rest] = best
+            return best
+
+        size = dfs(mask_all)
+        # reconstruct one solution
+        rest = mask_all
+        verts = []
+        while rest:
+            u = (rest & -rest).bit_length() - 1
+            take = 1 + dfs(rest & ~adj_mask[u] & ~(1 << u))
+            skip = dfs(rest ^ (1 << u))
+            if take >= skip:
+                verts.append(u)
+                rest = rest & ~adj_mask[u] & ~(1 << u)
+            else:
+                rest ^= 1 << u
+        return verts, size, "OPTIMAL"
+
+    # Branch-and-bound for sparse larger graphs
+    adj = [set(g.adj[u].keys()) for u in range(n)]
+    best: List[int] = []
+    # warm start with GWMIN
+    try:
+        warm = gwmin_independent(g)
+        if is_independent(g, warm):
+            best = list(warm)
+    except Exception:
+        pass
+    deadline = _time.perf_counter() + time_limit_s
+    timed_out = False
+
+    def bb(cand: set, cur: List[int]) -> None:
+        nonlocal best, timed_out
+        if timed_out:
+            return
+        if _time.perf_counter() > deadline:
+            timed_out = True
+            return
+        if not cand:
+            if len(cur) > len(best):
+                best = list(cur)
+            return
+        if len(cur) + len(cand) <= len(best):
+            return
+        # vertex of maximum degree in induced cand
+        v = max(cand, key=lambda u: len(adj[u] & cand))
+        cur.append(v)
+        bb(cand - adj[v] - {v}, cur)
+        cur.pop()
+        bb(cand - {v}, cur)
+
+    bb(set(range(n)), [])
+    if timed_out and not best:
+        return None, None, "FAILED"
+    return best, len(best), ("FEASIBLE" if timed_out else "OPTIMAL")
+
+
 def exact_mis_cpsat(
     g: Graph, time_limit_s: float = 10.0
 ) -> Tuple[Optional[List[int]], Optional[int], str]:
-    """Return (vertices, size, status). status is OPTIMAL|FEASIBLE|FAILED|NO_ORTOOLS."""
+    """Return (vertices, size, status). Prefer OR-Tools; fallback branch-and-bound."""
     try:
         from ortools.sat.python import cp_model
     except ImportError:
-        return None, None, "NO_ORTOOLS"
+        return exact_mis_branch(g, time_limit_s=time_limit_s)
 
     model = cp_model.CpModel()
     x = [model.NewBoolVar(f"v{i}") for i in range(g.n)]
-    # undirected: one constraint per unordered edge
     seen = set()
     for u in range(g.n):
         for v in g.adj[u]:
@@ -129,7 +270,8 @@ def exact_mis_cpsat(
         verts = [i for i in range(g.n) if solver.Value(x[i]) == 1]
         label = "OPTIMAL" if st == cp_model.OPTIMAL else "FEASIBLE"
         return verts, len(verts), label
-    return None, None, "FAILED"
+    # solver failed — try pure Python
+    return exact_mis_branch(g, time_limit_s=min(time_limit_s, 5.0))
 
 
 def new_out_dir() -> Path:
@@ -171,10 +313,15 @@ def run_scaling(args: argparse.Namespace) -> Path:
     out = new_out_dir()
     rows: List[Dict[str, Any]] = []
 
-    families = [
-        ("ER", lambda n, seed: erdos_renyi(n, args.avg_deg, seed)),
-        ("BA", lambda n, seed: barabasi_albert(n, max(2, int(args.avg_deg // 2)), seed)),
-    ]
+    deg_list = [float(x) for x in str(args.avg_deg_list or args.avg_deg).split(",")]
+    fam_names = [x.strip() for x in args.families.split(",") if x.strip()]
+    families = []
+    for d in deg_list:
+        families.extend(build_families(fam_names, d))
+    # GRID ignores degree — add once if requested
+    if any(x.upper() in ("GRID", "PLANAR") for x in fam_names):
+        if not any(name == "GRID" for name, _ in families):
+            families.append(("GRID", lambda n, seed: grid_graph(n, seed)))
 
     for family, builder in families:
         for n in n_list:
@@ -332,10 +479,16 @@ def run_pareto(args: argparse.Namespace) -> Path:
     out = new_out_dir()
     rows: List[Dict[str, Any]] = []
 
-    for family, builder in [
-        ("ER", lambda n, seed: erdos_renyi(n, args.avg_deg, seed)),
-        ("BA", lambda n, seed: barabasi_albert(n, max(2, int(args.avg_deg // 2)), seed)),
-    ]:
+    deg_list = [float(x) for x in str(args.avg_deg_list or args.avg_deg).split(",")]
+    fam_names = [x.strip() for x in args.families.split(",") if x.strip()]
+    # Pareto uses first degree for ER/BA label simplicity when single; multi-deg expands
+    families = []
+    for d in deg_list:
+        families.extend(build_families([f for f in fam_names if f.upper() not in ("GRID", "PLANAR")], d))
+    if any(x.upper() in ("GRID", "PLANAR") for x in fam_names):
+        families.append(("GRID", lambda n, seed: grid_graph(n, seed)))
+
+    for family, builder in families:
         for n in n_list:
             # Fixed graph per (family,n) so budgets are comparable
             g = builder(n, args.seed + n)
@@ -426,10 +579,16 @@ def run_exact(args: argparse.Namespace) -> Path:
     out = new_out_dir()
     rows: List[Dict[str, Any]] = []
 
-    for family, builder in [
-        ("ER", lambda n, seed: erdos_renyi(n, args.avg_deg, seed)),
-        ("BA", lambda n, seed: barabasi_albert(n, max(2, int(args.avg_deg // 2)), seed)),
-    ]:
+    deg_list = [float(x) for x in str(args.avg_deg_list or args.avg_deg).split(",")]
+    fam_names = [x.strip() for x in args.families.split(",") if x.strip()]
+    # Pareto uses first degree for ER/BA label simplicity when single; multi-deg expands
+    families = []
+    for d in deg_list:
+        families.extend(build_families([f for f in fam_names if f.upper() not in ("GRID", "PLANAR")], d))
+    if any(x.upper() in ("GRID", "PLANAR") for x in fam_names):
+        families.append(("GRID", lambda n, seed: grid_graph(n, seed)))
+
+    for family, builder in families:
         for n in n_list:
             for r in range(args.reps):
                 seed = args.seed + r * 1009 + n
@@ -652,7 +811,9 @@ def main() -> None:
     p.add_argument("--budgets", default="10,50,100,500", help="Comma budgets for pareto mode")
     p.add_argument("--reps", type=int, default=5)
     p.add_argument("--seed", type=int, default=42)
-    p.add_argument("--avg-deg", type=float, default=6.0)
+    p.add_argument("--avg-deg", type=float, default=6.0, help="Single degree (compat)")
+    p.add_argument("--avg-deg-list", default="", help="Comma degrees e.g. 3,6,12 (overrides --avg-deg when set)")
+    p.add_argument("--families", default="ER,BA", help="Comma list: ER,BA,GRID")
     p.add_argument("--n-list", default="200,500,1000,2000,5000")
     p.add_argument("--auto-n-threshold", type=int, default=DEFAULT_AUTO_N_THRESHOLD)
     p.add_argument("--require-morph", action="store_true")
@@ -664,16 +825,26 @@ def main() -> None:
     if args.quick:
         if args.mode in ("scaling", "all"):
             args.n_list = "200,500,1000"
-            args.reps = 3
+            args.reps = 2
+            if not args.avg_deg_list:
+                args.avg_deg_list = "3,6,12"
+            if args.families == "ER,BA":
+                args.families = "ER,BA,GRID"
         if args.mode in ("pareto", "all"):
             args.budgets = "10,50,100"
             if args.mode == "pareto":
                 args.n_list = "500,2000"
-                args.reps = 3
+                args.reps = 2
+                if not args.avg_deg_list:
+                    args.avg_deg_list = "6"
         if args.mode in ("exact", "all"):
             args.n_list = "20,40,60"
-            args.reps = 3
+            args.reps = 2
             args.exact_time_limit = 5.0
+            if not args.avg_deg_list:
+                args.avg_deg_list = "3,6"
+            if args.families == "ER,BA":
+                args.families = "ER,BA,GRID"
 
     modes = ["scaling", "pareto", "exact"] if args.mode == "all" else [args.mode]
     # Adjust n-list defaults per mode when user left scaling defaults on non-scaling mode

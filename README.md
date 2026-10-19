@@ -53,6 +53,14 @@ python benchmarks/run_benchmark.py --mode all --quick      # smoke all modes
 make bench-quick
 ```
 
+
+Degree and family sweeps:
+
+```bash
+python benchmarks/run_benchmark.py --mode scaling --avg-deg-list 3,6,12 --families ER,BA,GRID
+python benchmarks/run_benchmark.py --mode exact --avg-deg-list 3,6 --families ER,BA,GRID --n-list 20,40,60
+```
+
 Artifacts land in `results/<UTC>_<commit>/` (CSV + report.json + report.md + PNG).
 
 ## Limitations (honest)
