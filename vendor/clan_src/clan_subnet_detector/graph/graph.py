@@ -71,9 +71,15 @@ class Graph:
         return len(self.adj[u])
 
     def edge_count(self) -> int:
-        total = sum(len(neigh) for neigh in self.adj)
-        return total if self.directed else total // 2
-
+        if self.directed:
+            return sum(len(neigh) for neigh in self.adj)
+        # Count each undirected edge once, including self-loops (stored once).
+        return sum(
+            1
+            for u, neighbors in enumerate(self.adj)
+            for v in neighbors
+            if u <= v
+        )
     def induced_subgraph(self, nodes: Iterable[int]) -> "Graph":
         node_list = sorted(set(nodes))
         mapping = {old: new for new, old in enumerate(node_list)}
