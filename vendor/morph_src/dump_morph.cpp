@@ -11,7 +11,7 @@
 
 int main(int argc, char** argv) {
     if (argc != 4) {
-        std::cerr << "usage: dump_morph <graph.gph> <budget_ms> <seed>\\n";
+        std::cerr << "usage: dump_morph <graph.gph> <budget_ms> <seed>\n";
         return 2;
     }
     try {
@@ -38,13 +38,13 @@ int main(int argc, char** argv) {
         const uint64_t seed = static_cast<uint64_t>(parsed_seed);
 
         Solution s = morph(g, seed, budget_ms);
-        std::cout << "# " << s.size << "\\n";
+        std::cout << "# " << s.size << "\n";
         for (int v = 0; v < g.n; ++v) {
-            if (s.x[v]) std::cout << (v + 1) << "\\n";
+            if (s.x[v]) std::cout << (v + 1) << "\n";
         }
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << "dump_morph error: " << e.what() << "\\n";
+        std::cerr << "dump_morph error: " << e.what() << "\n";
         return 1;
     }
 }
