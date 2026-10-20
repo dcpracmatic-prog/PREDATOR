@@ -65,7 +65,16 @@ def hmac_sign(content_hash: str, secret: bytes, *, key_id: str) -> Dict[str, Any
 
 
 def hmac_verify(content_hash: str, signature: str, secret: bytes) -> bool:
-    expected = hmac.new(secret, content_hash.encode("ascii"), hashlib.sha256).hexdigest()
+    """Verify a raw HMAC value, returning False for malformed inputs."""
+    if not isinstance(content_hash, str) or not isinstance(signature, str):
+        return False
+    if not isinstance(secret, (bytes, bytearray)):
+        return False
+    try:
+        message = content_hash.encode("ascii")
+        expected = hmac.new(bytes(secret), message, hashlib.sha256).hexdigest()
+    except (UnicodeEncodeError, TypeError, ValueError):
+        return False
     return hmac.compare_digest(expected, signature)
 
 
@@ -155,22 +164,29 @@ def sign_report_ed25519(
 
 
 def verify_envelope_hmac(envelope: Mapping[str, Any], secret: bytes) -> Tuple[bool, str]:
-    """Verify HMAC envelope. Returns (ok, reason)."""
+    """Verify envelope version, canonical payload hash, and HMAC without trusting its shape."""
+    if not isinstance(envelope, Mapping):
+        return False, "invalid envelope"
     if envelope.get("envelope_version") != ENVELOPE_VERSION:
         return False, "unsupported envelope_version"
     payload = envelope.get("payload")
-    integrity = envelope.get("integrity") or {}
+    integrity = envelope.get("integrity")
     if not isinstance(payload, dict):
         return False, "missing payload"
-    alg = integrity.get("alg")
-    if alg != "HMAC-SHA256":
-        return False, f"unexpected alg {alg}"
-    expected_hash = content_hash_for_report(payload)
+    if not isinstance(integrity, Mapping):
+        return False, "missing integrity"
+    if integrity.get("alg") != "HMAC-SHA256":
+        return False, f"unexpected alg {integrity.get('alg')}"
+    try:
+        expected_hash = content_hash_for_report(payload)
+    except (TypeError, ValueError, OverflowError):
+        return False, "payload is not canonical JSON"
     if integrity.get("content_hash") != expected_hash:
         return False, "content_hash mismatch"
     if payload.get("content_hash") != expected_hash:
         return False, "payload content_hash field mismatch"
-    if not hmac_verify(expected_hash, str(integrity.get("signature", "")), secret):
+    signature = integrity.get("signature")
+    if not isinstance(signature, str) or not hmac_verify(expected_hash, signature, secret):
         return False, "signature invalid"
     return True, "ok"
 
@@ -191,15 +207,22 @@ def verify_envelope_ed25519(
         return False, "missing integrity"
     if integrity.get("alg") != "Ed25519":
         return False, f"unexpected alg {integrity.get('alg')}"
-    expected_hash = content_hash_for_report(payload)
+    try:
+        expected_hash = content_hash_for_report(payload)
+    except (TypeError, ValueError, OverflowError):
+        return False, "payload is not canonical JSON"
     if integrity.get("content_hash") != expected_hash:
         return False, "content_hash mismatch"
     if payload.get("content_hash") != expected_hash:
         return False, "payload content_hash field mismatch"
     signature = integrity.get("signature")
-    if not isinstance(signature, str) or not ed25519_verify(
-        expected_hash, signature, public_key_pem
-    ):
+    if not isinstance(signature, str):
+        return False, "signature invalid"
+    try:
+        valid_signature = ed25519_verify(expected_hash, signature, public_key_pem)
+    except (TypeError, ValueError):
+        return False, "public key invalid"
+    if not valid_signature:
         return False, "signature invalid"
     return True, "ok"
 
