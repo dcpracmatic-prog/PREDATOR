@@ -184,13 +184,15 @@ def plan_independent(
     if (isinstance(auto_n_threshold, bool) or not isinstance(auto_n_threshold, int)
             or auto_n_threshold < 0):
         raise ValueError("auto_n_threshold must be a non-negative integer")
-    if process_timeout_s is not None and (
-        isinstance(process_timeout_s, bool)
-        or not isinstance(process_timeout_s, Real)
-        or not math.isfinite(float(process_timeout_s))
-        or float(process_timeout_s) <= 0
-    ):
-        raise ValueError("process_timeout_s must be None or a positive finite number")
+    if process_timeout_s is not None:
+        if isinstance(process_timeout_s, bool) or not isinstance(process_timeout_s, Real):
+            raise ValueError("process_timeout_s must be None or a positive finite number")
+        try:
+            process_timeout_s = float(process_timeout_s)
+        except (OverflowError, TypeError, ValueError) as exc:
+            raise ValueError("process_timeout_s must be representable as a finite number") from exc
+        if not math.isfinite(process_timeout_s) or process_timeout_s <= 0:
+            raise ValueError("process_timeout_s must be None or a positive finite number")
     banned = _validated_banned(g, banned)
     weights = _validated_weights(weights, g.n)
 
