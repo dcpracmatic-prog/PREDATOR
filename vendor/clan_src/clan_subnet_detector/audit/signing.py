@@ -102,8 +102,12 @@ def ed25519_verify(content_hash: str, signature: str, public_key_pem: bytes) -> 
     if not isinstance(key, Ed25519PublicKey):
         raise TypeError("PEM is not an Ed25519 public key")
     try:
+        # Decode and encode inside the guarded block: untrusted malformed hex
+        # or a non-ASCII hash must be a verification failure, not an exception.
         key.verify(bytes.fromhex(signature), content_hash.encode("ascii"))
         return True
+    except (ValueError, TypeError, UnicodeEncodeError):
+        return False
     except Exception:
         return False
 
