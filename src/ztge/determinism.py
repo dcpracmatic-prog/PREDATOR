@@ -86,13 +86,12 @@ def _thread_cpu_ns() -> int | None:
 
 
 def _resource_cpu_ns() -> tuple[int | None, str]:
+    """Return process-wide CPU time; thread time has its own clock above."""
     if resource is None:
         return None, "unavailable"
-    scope = "thread" if hasattr(resource, "RUSAGE_THREAD") else "process"
-    who = getattr(resource, "RUSAGE_THREAD", resource.RUSAGE_SELF)
     try:
-        usage = resource.getrusage(who)
-        return int((usage.ru_utime + usage.ru_stime) * 1_000_000_000), scope
+        usage = resource.getrusage(resource.RUSAGE_SELF)
+        return int((usage.ru_utime + usage.ru_stime) * 1_000_000_000), "process"
     except (OSError, ValueError, AttributeError):
         return None, "unavailable"
 
