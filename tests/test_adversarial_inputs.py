@@ -6,6 +6,7 @@ import pytest
 
 from clan_subnet_detector.graph.graph import Graph
 from clan_subnet_detector.graph.temporal import TemporalGraph
+from clan_subnet_detector.detection.independent_set import plan_independent
 from clan_subnet_detector.ingest.edge_list import (
     load_edge_list,
     load_netflow_summary,
@@ -129,3 +130,17 @@ def test_temporal_graph_rejects_non_finite_data_and_reversed_windows():
         graph.window(2.0, 1.0)
     with pytest.raises(ValueError, match="positive finite"):
         graph.sliding_windows(float("nan"), 1.0)
+
+@pytest.mark.parametrize("weights", [[1.0], [float("nan"), 1.0], [-1.0, 1.0], [True, 1.0]])
+def test_planner_rejects_malformed_vertex_weights(weights):
+    graph = Graph.from_edges(2, [(0, 1)])
+    with pytest.raises((TypeError, ValueError)):
+        plan_independent(graph, method="gwmin", weights=weights)
+
+
+def test_planner_consumes_banned_generators_once_and_respects_them():
+    graph = Graph.from_edges(4, [(0, 1), (1, 2), (2, 3)])
+    banned = (node for node in [0, 2])
+    result = plan_independent(graph, method="gwmin", banned=banned)
+    assert not set(result).intersection({0, 2})
+    assert all(not graph.has_edge(u, v) for i, u in enumerate(result) for v in result[i + 1:])
