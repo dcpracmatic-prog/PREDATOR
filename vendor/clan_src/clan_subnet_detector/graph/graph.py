@@ -79,8 +79,12 @@ class Graph:
         mapping = {old: new for new, old in enumerate(node_list)}
         sub = Graph(n=len(node_list), directed=self.directed)
         for old_u in node_list:
+            if old_u < 0 or old_u >= self.n:
+                raise IndexError("node index out of range")
             for old_v, w in self.adj[old_u].items():
-                if old_v in mapping:
+                if old_v in mapping and (self.directed or old_u <= old_v):
+                    # Undirected adjacency stores each edge twice; insert it once
+                    # or add_edge() would double its weight in the induced graph.
                     sub.add_edge(mapping[old_u], mapping[old_v], w)
         return sub
 
