@@ -12,6 +12,7 @@ from clan_subnet_detector.audit.signing import (
 )
 from clan_subnet_detector.detection.independent_set import gwmin_independent, is_independent
 from clan_subnet_detector.graph.graph import Graph
+from clan_subnet_detector.graph.metrics import density
 
 
 def test_hmac_envelope_detects_payload_tampering():
@@ -56,6 +57,8 @@ def test_ed25519_verifier_rejects_malformed_signature_without_raising():
 def test_independent_set_rejects_self_loop_and_greedy_skips_looped_vertex():
     graph = Graph.from_edges(3, [(0, 0), (1, 2)])
     assert not is_independent(graph, [0])
+    assert graph.edge_count() == 2
+    assert density(graph) == 1 / 3
     result = gwmin_independent(graph)
     assert 0 not in result
     assert is_independent(graph, result)
