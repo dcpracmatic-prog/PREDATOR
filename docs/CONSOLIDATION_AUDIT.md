@@ -67,7 +67,7 @@ Corrección aplicada: el punto de entrada ahora apunta a `clan_subnet_detector.s
 
 ## Hallazgos de auditoría de casos límite
 
-- Corregido el subgrafo inducido no dirigido: antes insertaba dos veces cada arista almacenada en ambas listas de adyacencia, duplicando pesos.
+- Corregido el subgrafo inducido no dirigido: antes insertaba dos veces cada arista almacenada en ambas listas de adyacencia, duplicando pesos. El conteo de aristas no dirigidas ahora cuenta los auto-bucles una sola vez y la densidad los excluye del numerador para no superar 1.
 - Corregido el verificador de conjunto independiente para rechazar vértices con auto-bucle y nodos fuera de rango; GWMIN ya no selecciona vértices con auto-bucle.
 - El verificador Ed25519 ahora trata una firma hexadecimal malformada o un hash no ASCII como verificación fallida, en lugar de propagar la excepción.
 - Añadidas pruebas de regresión para manipulación de payloads HMAC/Ed25519, ciclo completo Ed25519, firma malformada, auto-bucles y preservación de pesos.
