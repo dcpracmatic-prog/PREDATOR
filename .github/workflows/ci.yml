@@ -1,0 +1,44 @@
+name: ZTGE CI
+
+on:
+  push:
+    branches: ["main", "audit/**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Set up C++ compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y g++
+      - name: Install package and test dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[yaml,dev,crypto]"
+      - name: Build MORPH
+        run: make build-morph
+      - name: Run tests
+        env:
+          MORPH_DUMP_BIN: ${{ github.workspace }}/vendor/morph_src/dump_morph
+        run: python -m pytest tests -q
+      - name: Check installed CLI entry points
+        env:
+          MORPH_DUMP_BIN: ${{ github.workspace }}/vendor/morph_src/dump_morph
+        run: |
+          ztge-status
+          clan-detect --help
