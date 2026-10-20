@@ -7,6 +7,8 @@ import pytest
 
 from ztge.determinism import Meter, best_of_k, code_identity, count_work, evidence_manifest, expected_work
 
+_GLOBAL_CONFIG = {"threshold": 3}
+
 
 def _linear(hops: int) -> int:
     total = 0
@@ -38,18 +40,17 @@ def test_best_of_k_reports_samples_and_validates_arguments():
 
 
 def test_identity_changes_when_defaults_and_mutable_globals_change():
-    config = {"threshold": 3}
-
     def target(value=2):
-        return value + config["threshold"]
+        return value + _GLOBAL_CONFIG["threshold"]
 
     before = code_identity([target])
     target.__defaults__ = (5,)
     changed_default = code_identity([target])
     assert before["sha256"] != changed_default["sha256"]
-    config["threshold"] = 9
+    _GLOBAL_CONFIG["threshold"] = 9
     changed_global = code_identity([target])
     assert changed_default["sha256"] != changed_global["sha256"]
+    _GLOBAL_CONFIG["threshold"] = 3
 
 
 def test_identity_includes_closure_state():
@@ -106,9 +107,11 @@ def test_expected_work_rejects_bool_negative_and_nonfinite_inputs():
     for hops in (True, -1, 1.2):
         with pytest.raises(ValueError):
             expected_work(hops, intercept=1, slope=1)
-    for value in (True, float("nan"), float("inf"), -1):
+    for value in (True, float("nan"), float("inf"), -1, 10**10000):
         with pytest.raises(ValueError):
             expected_work(1, intercept=value, slope=1)
+    with pytest.raises(ValueError):
+        expected_work(10**100, intercept=1e308, slope=1e308)
 
 
 def test_manifest_is_json_safe_and_non_authoritative():
