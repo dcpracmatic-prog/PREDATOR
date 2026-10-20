@@ -155,6 +155,7 @@ def plan_independent(
     seed: int = 1,
     trace_out: Optional[List[Dict[str, Any]]] = None,
     auto_n_threshold: int = DEFAULT_AUTO_N_THRESHOLD,
+    process_timeout_s: Optional[float] = None,
 ) -> List[int]:
     """Public planner with transparent method resolution.
 
@@ -178,6 +179,13 @@ def plan_independent(
     if (isinstance(auto_n_threshold, bool) or not isinstance(auto_n_threshold, int)
             or auto_n_threshold < 0):
         raise ValueError("auto_n_threshold must be a non-negative integer")
+    if process_timeout_s is not None and (
+        isinstance(process_timeout_s, bool)
+        or not isinstance(process_timeout_s, Real)
+        or not math.isfinite(float(process_timeout_s))
+        or float(process_timeout_s) <= 0
+    ):
+        raise ValueError("process_timeout_s must be None or a positive finite number")
     banned = _validated_banned(g, banned)
     weights = _validated_weights(weights, g.n)
 
@@ -189,6 +197,7 @@ def plan_independent(
         "morph": None,
         "size": 0,
         "auto_n_threshold": auto_n_threshold,
+        "process_timeout_s": process_timeout_s,
         "graph_n": g.n,
     }
 
@@ -238,6 +247,7 @@ def plan_independent(
             budget_ms=budget_ms,
             seed=seed,
             info_out=morph_info,
+            process_timeout_s=process_timeout_s,
         )
         if len(set(verts)) != len(verts) or not is_independent(g, verts):
             raise ValueError("MORPH returned an invalid independent-set candidate")
