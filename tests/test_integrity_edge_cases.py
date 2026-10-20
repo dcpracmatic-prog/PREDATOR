@@ -5,6 +5,7 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from clan_subnet_detector.audit.signing import (
     ed25519_verify,
+    hmac_verify,
     sign_report_ed25519,
     sign_report_hmac,
     verify_envelope_ed25519,
@@ -71,3 +72,33 @@ def test_induced_subgraph_preserves_undirected_edge_weight():
     assert subgraph.adj[1][0] == 2.5
     assert subgraph.adj[1][2] == 4.0
     assert subgraph.adj[2][1] == 4.0
+
+def test_signed_envelope_verifiers_fail_closed_on_malformed_shapes_and_non_json_values():
+    private_key = Ed25519PrivateKey.generate()
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    malformed = [
+        None,
+        [],
+        {"envelope_version": "ztge.envelope.v1", "payload": {}, "integrity": []},
+        {
+            "envelope_version": "ztge.envelope.v1",
+            "payload": {"value": float("nan")},
+            "integrity": {"alg": "HMAC-SHA256", "signature": "x", "content_hash": "x"},
+        },
+        {
+            "envelope_version": "ztge.envelope.v1",
+            "payload": {"value": float("inf")},
+            "integrity": {"alg": "Ed25519", "signature": "x", "content_hash": "x"},
+        },
+    ]
+    for envelope in malformed:
+        assert verify_envelope_hmac(envelope, b"test-secret")[0] is False
+        assert verify_envelope_ed25519(envelope, public_pem)[0] is False
+
+
+def test_crypto_verifiers_reject_malformed_keys_and_secret_types_without_crashing():
+    assert hmac_verify("abcd", "00", "not-bytes") is False
+    assert ed25519_verify("abcd", "00", b"not-a-public-key") is False
