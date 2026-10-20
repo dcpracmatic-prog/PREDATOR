@@ -41,6 +41,27 @@ import json
 env = json.loads(paths["signed"].read_text())
 ok, reason = verify_envelope_hmac(env, secret)
 assert ok, reason
+
+# Public-key verification: keep the private key with the signer and distribute
+# the corresponding public key to independent auditors.
+from clan_subnet_detector.audit import sign_report_ed25519, verify_envelope_ed25519
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+# Demonstration only: in production, load a persistent protected private key.
+private_key = Ed25519PrivateKey.generate()
+private_pem = private_key.private_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PrivateFormat.PKCS8,
+    encryption_algorithm=serialization.NoEncryption(),
+)
+public_pem = private_key.public_key().public_bytes(
+    encoding=serialization.Encoding.PEM,
+    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+)
+ed_env = sign_report_ed25519(report.to_v1_dict(), private_pem, key_id="ed25519:prod")
+ok, reason = verify_envelope_ed25519(ed_env, public_pem)
+assert ok, reason
 ```
 
 ## Stable fields for auditors

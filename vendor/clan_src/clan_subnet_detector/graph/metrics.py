@@ -10,7 +10,12 @@ from .graph import Graph
 
 def density(g: Graph) -> float:
     """Edge density of the graph (or induced subgraph)."""
-    m = g.edge_count()
+    # Density counts edges between distinct vertices; self-loops do not
+    # increase density and must not make it exceed 1.
+    if g.directed:
+        m = sum(1 for u, neighbors in enumerate(g.adj) for v in neighbors if u != v)
+    else:
+        m = sum(1 for u, neighbors in enumerate(g.adj) for v in neighbors if u < v)
     n = g.n
     if n < 2:
         return 0.0

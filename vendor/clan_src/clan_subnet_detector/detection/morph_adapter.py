@@ -27,12 +27,14 @@ Fallback is the responsibility of ``plan_independent``.
 
 from __future__ import annotations
 
+import math
 import os
 import shutil
 import subprocess
 import tempfile
 import time
 from dataclasses import asdict, dataclass, field
+from numbers import Real
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -47,6 +49,7 @@ class MorphRunInfo:
     binary: str = ""
     binary_resolved: str = ""
     budget_ms: int = 0
+    process_timeout_s: float = 0.0
     seed: int = 1
     n_input: int = 0
     m_input: int = 0
@@ -63,8 +66,8 @@ class MorphRunInfo:
 
 
 def graph_to_gph(g: Graph, path: Path) -> None:
-    """Write graph in DIMACS-like .gph format expected by MORPH (1-indexed edges)."""
-    lines = [f"p edge {g.n} {g.edge_count()}"]
+    """Write simple undirected edges in the 1-indexed format expected by MORPH."""
+    edges = []
     seen = set()
     for u in range(g.n):
         for v in g.adj[u]:
@@ -74,7 +77,9 @@ def graph_to_gph(g: Graph, path: Path) -> None:
             if (a, b) in seen:
                 continue
             seen.add((a, b))
-            lines.append(f"e {a + 1} {b + 1}")
+            edges.append((a, b))
+    lines = [f"p edge {g.n} {len(edges)}"]
+    lines.extend(f"e {u + 1} {v + 1}" for u, v in edges)
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -179,10 +184,32 @@ def morph_independent(
     seed: int = 1,
     binary: Optional[Path] = None,
     info_out: Optional[List[MorphRunInfo]] = None,
+    process_timeout_s: Optional[float] = None,
 ) -> List[int]:
     """Call MORPH and return an independent set (0-indexed vertices)."""
+    if isinstance(budget_ms, bool) or not isinstance(budget_ms, int) or budget_ms <= 0:
+        raise ValueError("budget_ms must be a positive integer")
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+        raise ValueError("seed must be a non-negative integer")
+    if k is not None and (
+        isinstance(k, bool) or not isinstance(k, int) or k < 0
+    ):
+        raise ValueError("k must be None or a non-negative integer")
+    if process_timeout_s is None:
+        effective_timeout_s = max(5.0, budget_ms / 1000.0 + 2.0)
+    else:
+        if isinstance(process_timeout_s, bool) or not isinstance(process_timeout_s, Real):
+            raise ValueError("process_timeout_s must be a positive finite number")
+        try:
+            effective_timeout_s = float(process_timeout_s)
+        except (OverflowError, TypeError, ValueError) as exc:
+            raise ValueError("process_timeout_s must be representable as a finite number") from exc
+        if not math.isfinite(effective_timeout_s) or effective_timeout_s <= 0:
+            raise ValueError("process_timeout_s must be a positive finite number")
+
     info = MorphRunInfo(
         budget_ms=budget_ms,
+        process_timeout_s=effective_timeout_s,
         seed=seed,
         n_input=g.n,
         m_input=g.edge_count(),
@@ -198,7 +225,26 @@ def morph_independent(
     info.binary = bin_path.name
     info.binary_resolved = str(bin_path)
 
-    banned_set = set(banned or [])
+    try:
+        banned_set = set(banned or [])
+    except TypeError as exc:
+        raise TypeError("banned must be an iterable of integer node IDs") from exc
+    for node in banned_set:
+        if isinstance(node, bool) or not isinstance(node, int):
+            raise TypeError("banned node IDs must be integers")
+        if node < 0 or node >= g.n:
+            raise IndexError(f"banned node ID out of range: {node}")
+    # Self-loop vertices cannot be in an independent set; exclude them before
+    # serialization so the native solver never sees a graph with dropped loops.
+    looped = {node for node in range(g.n) if node in g.adj[node]}
+    if looped:
+        banned_set.update(looped)
+        info.notes.append(f"excluded_self_loops={len(looped)}")
+    if k == 0:
+        info.ok = True
+        if info_out is not None:
+            info_out.append(info)
+        return []
     if banned_set:
         keep = [i for i in range(g.n) if i not in banned_set]
         inv = {new: old for new, old in enumerate(keep)}
@@ -232,7 +278,7 @@ def morph_independent(
                     cmd,
                     capture_output=True,
                     text=True,
-                    timeout=max(5.0, budget_ms / 1000.0 + 30.0),
+                    timeout=effective_timeout_s,
                     check=False,
                 )
             except subprocess.TimeoutExpired as e:
@@ -242,15 +288,39 @@ def morph_independent(
                 raise RuntimeError(
                     f"MORPH failed (rc={out.returncode}): {out.stderr[:400]}"
                 )
+            output_lines = [line.strip() for line in (out.stdout or "").splitlines() if line.strip()]
+            if not output_lines or not output_lines[0].startswith("#"):
+                raise RuntimeError("MORPH output is missing the '# <size>' header")
+            try:
+                declared_size = int(output_lines[0][1:].strip())
+            except ValueError as exc:
+                raise RuntimeError("MORPH output has a malformed size header") from exc
+            if declared_size < 0 or declared_size > work.n:
+                raise RuntimeError(f"MORPH declared impossible solution size: {declared_size}")
+
             verts: List[int] = []
-            for line in out.stdout.splitlines():
-                s = line.strip()
-                if not s or s.startswith("#") or s.startswith("c"):
+            seen_vertices = set()
+            for line_number, value in enumerate(output_lines[1:], start=2):
+                if value.startswith("c"):
                     continue
+                if value.startswith("#"):
+                    raise RuntimeError(f"MORPH output has an unexpected header at line {line_number}")
                 try:
-                    verts.append(int(s) - 1)
-                except ValueError:
-                    continue
+                    vertex_id = int(value)
+                except ValueError as exc:
+                    raise RuntimeError(f"MORPH output has malformed vertex at line {line_number}") from exc
+                if vertex_id < 1 or vertex_id > work.n:
+                    raise RuntimeError(f"MORPH output vertex is out of range: {vertex_id}")
+                if vertex_id in seen_vertices:
+                    raise RuntimeError(f"MORPH output contains duplicate vertex: {vertex_id}")
+                seen_vertices.add(vertex_id)
+                verts.append(vertex_id - 1)
+            if len(verts) != declared_size:
+                raise RuntimeError(
+                    f"MORPH output size mismatch: header={declared_size}, vertices={len(verts)}"
+                )
+            if not verts:
+                raise RuntimeError("MORPH returned an empty independent set for a non-empty graph")
     except Exception as e:
         info.error = str(e)
         info.wall_ms = (time.perf_counter() - t0) * 1000.0
@@ -259,10 +329,25 @@ def morph_independent(
         raise
 
     info.wall_ms = (time.perf_counter() - t0) * 1000.0
-    if inv is not None:
-        verts = [inv[v] for v in verts if v in inv]
-    if k is not None and len(verts) > k:
-        verts = verts[:k]
+    try:
+        if inv is not None:
+            # Every returned index has already been range-checked above.
+            verts = [inv[v] for v in verts]
+        selected = set(verts)
+        if len(selected) != len(verts):
+            raise RuntimeError("MORPH returned duplicate vertices after remapping")
+        for u in selected:
+            if u in g.adj[u] or any(v in selected for v in g.adj[u]):
+                raise RuntimeError("MORPH returned a non-independent vertex set")
+        if selected.intersection(banned_set):
+            raise RuntimeError("MORPH returned a banned vertex")
+        if k is not None and len(verts) > k:
+            verts = verts[:k]
+    except Exception as exc:
+        info.error = str(exc)
+        if info_out is not None:
+            info_out.append(info)
+        raise
     info.size = len(verts)
     info.ok = True
     if info_out is not None:

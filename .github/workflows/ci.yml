@@ -42,3 +42,24 @@ jobs:
         run: |
           ztge-status
           clan-detect --help
+      - name: Run deterministic planner performance smoke benchmark
+        env:
+          MORPH_DUMP_BIN: ${{ github.workspace }}/vendor/morph_src/dump_morph
+        run: |
+          python benchmarks/stress_validation.py --sizes 256,768,1600 --repeats 2 --budget-ms 50 --max-ms 10000 --output /tmp/ztge-performance.json
+      - name: Upload performance report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ztge-performance-python-${{ matrix.python-version }}
+          path: /tmp/ztge-performance.json
+          if-no-files-found: error
+      - name: Build wheel and verify clean installation
+        run: |
+          python -m pip wheel . --no-deps --wheel-dir /tmp/ztge-wheel
+          python -m venv /tmp/ztge-clean-venv
+          wheel="$(find /tmp/ztge-wheel -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          /tmp/ztge-clean-venv/bin/python -m pip install "${wheel}[yaml,crypto]"
+          cd /tmp
+          /tmp/ztge-clean-venv/bin/ztge-status
+          /tmp/ztge-clean-venv/bin/clan-detect --help

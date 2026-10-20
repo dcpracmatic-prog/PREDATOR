@@ -5,7 +5,9 @@ from .schema import SCHEMA_VERSION, validate_report
 from .signing import (
     attach_content_hash,
     generate_hmac_secret,
+    sign_report_ed25519,
     sign_report_hmac,
+    verify_envelope_ed25519,
     verify_envelope_hmac,
 )
 
@@ -18,6 +20,8 @@ __all__ = [
     "validate_report",
     "attach_content_hash",
     "generate_hmac_secret",
+    "sign_report_ed25519",
     "sign_report_hmac",
+    "verify_envelope_ed25519",
     "verify_envelope_hmac",
 ]
