@@ -100,6 +100,10 @@ def ed25519_sign(content_hash: str, private_key_pem: bytes, *, key_id: str) -> D
 
 
 def ed25519_verify(content_hash: str, signature: str, public_key_pem: bytes) -> bool:
+    if not isinstance(content_hash, str) or not isinstance(signature, str):
+        return False
+    if not isinstance(public_key_pem, (bytes, bytearray)):
+        return False
     try:
         from cryptography.hazmat.primitives import serialization
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -107,9 +111,12 @@ def ed25519_verify(content_hash: str, signature: str, public_key_pem: bytes) -> 
         raise RuntimeError(
             "Ed25519 verify requires the 'cryptography' package"
         ) from e
-    key = serialization.load_pem_public_key(public_key_pem)
+    try:
+        key = serialization.load_pem_public_key(bytes(public_key_pem))
+    except (TypeError, ValueError):
+        return False
     if not isinstance(key, Ed25519PublicKey):
-        raise TypeError("PEM is not an Ed25519 public key")
+        return False
     try:
         # Decode and encode inside the guarded block: untrusted malformed hex
         # or a non-ASCII hash must be a verification failure, not an exception.
