@@ -1,6 +1,6 @@
 # ZTGE — auditoría y consolidación
 
-Fecha de revisión: 2026-10-19  
+Fecha de revisión: 2026-10-20  
 Rama de trabajo: `audit/ztge-consolidation`
 
 ## Estado observado
@@ -11,8 +11,8 @@ El repositorio ya reúne un SDK Python, una heurística nativa C++ (`MORPH`), ve
 
 ### P0 — Verificación real antes de declarar una versión consolidada
 
-- La documentación describe rutas de instalación y pruebas, pero el estado de GitHub Actions no se ha verificado desde esta auditoría. Se añade un workflow de CI para construir MORPH y ejecutar la suite en Python 3.10–3.12.
-- Verificación inicial completada: seis jobs en Python 3.10–3.12 pasaron tras corregir el entry point `ztge-status`. Esto valida la instalación editable y los smoke tests del CLI, pero no cierra la auditoría del motor.
+- CI comprobado en Python 3.10, 3.11 y 3.12: suite de pruebas, benchmark de humo, build de MORPH, smoke tests del CLI y wheel en entorno virtual limpio.
+- La matriz verde valida estas plataformas y escenarios de regresión, no equivale a una auditoría de seguridad exhaustiva ni prueba de optimalidad global.
 
 ### P1 — Contrato de firma y verificación independiente
 
@@ -29,7 +29,7 @@ El repositorio ya reúne un SDK Python, una heurística nativa C++ (`MORPH`), ve
 
 ### P1 — Integridad de la entrada del grafo
 
-Asegurar y probar: nodos fuera de rango, aristas duplicadas, auto-bucles, grafo vacío, nodos aislados, entradas con tipos incorrectos, grafos dirigidos (rechazo explícito si no se soportan) y entradas de gran tamaño. La normalización no debe cambiar silenciosamente la semántica del grafo.
+Asegurar y probar: nodos fuera de rango, aristas duplicadas, auto-bucles, grafo vacío, nodos aislados, entradas con tipos incorrectos, grafos dirigidos y entradas de gran tamaño. La capa Python valida nodos, pesos finitos y estructura; MORPH valida el archivo nativo y limita cabeceras a 2.000.000 de vértices y 10.000.000 de aristas para evitar reservas de memoria descontroladas. MORPH trabaja con grafos no dirigidos simples; la serialización debe conservar ese contrato.
 
 ### P2 — Empaquetado y experiencia de uso
 
@@ -44,32 +44,34 @@ Asegurar y probar: nodos fuera de rango, aristas duplicadas, auto-bucles, grafo 
 
 ## Orden recomendado
 
-1. Obtener CI verde en la rama de consolidación y corregir los fallos reales que aparezcan.
-2. Auditar los módulos de firma/verificación y añadir pruebas negativas.
-3. Auditar la validación del grafo y la frontera Python/C++ con casos adversariales.
-4. Verificar instalación desde wheel en un entorno limpio y los comandos CLI.
-5. Ejecutar benchmarks reproducibles con semillas fijadas y reportar calidad, latencia total, método efectivo y dispersión; separar resultados sintéticos de resultados de producción.
-6. Revisar licencias y procedencia de `vendor/`, y fijar el proceso de releases/versionado.
+1. Completado: matrix CI verde y corrección de fallos detectados.
+2. Completado para casos de regresión: verificación HMAC/Ed25519, payloads manipulados y estructuras mal formadas.
+3. Completado para los casos cubiertos: loaders Python, parámetros, salida MORPH corrupta, timeout de subprocess real y parser nativo .gph.
+4. Completado en CI: construcción de wheel, instalación limpia y ejecución de los dos comandos CLI.
+5. Completado como benchmark de humo, no como estudio de rendimiento publicable: semillas fijadas, n=256/768/1600, GWMIN/auto/MORPH cuando está disponible, validez, tiempo de pared total, tamaño de solución y fallback.
+6. Pendiente antes de un release formal: auditoría de licencias/procedencia de `vendor/`, política de versiones y benchmarks extendidos/independientes.
 
 ## Criterio de aceptación para declarar “consolidado”
 
 - CI verde en todas las versiones Python soportadas.
-- Suite de pruebas que cubra verificadores, fallback, errores de proceso y firmas inválidas.
-- Instalación limpia desde wheel y CLI operativos sin `PYTHONPATH` manual.
+- Pruebas negativas para verificadores, fallbacks, entradas adversariales, respuesta nativa mal formada y timeout de proceso.
+- Instalación limpia desde wheel y CLI operativos fuera del checkout.
 - Informes reproducibles y verificables por un consumidor independiente.
-- Benchmarks que distingan latencia interna de latencia total y calidad de la solución.
-- Documentación consistente con el comportamiento comprobado, sin atribuir optimalidad a una heurística ni garantías de seguridad no demostradas.
+- Benchmark de humo que distingue latencia de pared total, calidad y método/fallback efectivos; los benchmarks de producción más extensos siguen pendientes.
+- Documentación consistente con comportamiento comprobado, sin atribuir optimalidad a una heurística ni garantías de seguridad no demostradas.
 ## Incidencia CI detectada y corrección aplicada
 
 Los primeros seis checks fallaron al ejecutar `ztge-status`, después de que MORPH compilara correctamente y las dos pruebas existentes pasaran. Error observado: `ModuleNotFoundError: No module named 'ztge_status_entry'`. La causa era un punto de entrada de consola que referenciaba un módulo no incluido de forma importable en la instalación.
 
 Corrección aplicada: el punto de entrada ahora apunta a `clan_subnet_detector.status_cli:main`. GitHub Actions confirmó después los seis jobs (Python 3.10, 3.11 y 3.12 en dos ejecuciones); los pasos de instalación, compilación MORPH, pruebas y smoke tests del CLI terminaron en verde.
 
-## Hallazgos de auditoría de casos límite
+## Hallazgos de auditoría de casos límite y evidencia de CI
 
 - Corregido el subgrafo inducido no dirigido: antes insertaba dos veces cada arista almacenada en ambas listas de adyacencia, duplicando pesos. El conteo de aristas no dirigidas ahora cuenta los auto-bucles una sola vez y la densidad los excluye del numerador para no superar 1.
 - Corregido el verificador de conjunto independiente para rechazar vértices con auto-bucle y nodos fuera de rango; GWMIN ya no selecciona vértices con auto-bucle.
 - El verificador Ed25519 ahora trata una firma hexadecimal malformada o un hash no ASCII como verificación fallida, en lugar de propagar la excepción.
-- Añadidas pruebas de regresión para manipulación de payloads HMAC/Ed25519, ciclo completo Ed25519, firma malformada, auto-bucles y preservación de pesos.
+- Añadidas pruebas para loaders estáticos/temporales/NetFlow, entradas no finitas, pesos y tamaños no representables, IDs booleanos, grafos aleatorios con semillas fijas, salidas MORPH duplicadas/fuera de rango/no independientes, errores del ejecutable, timeout simulado y timeout de un ejecutable POSIX real.
+- El parser C++ rechaza cabeceras negativas o demasiado grandes, aristas truncadas, vértices fuera de rango, self-loops, duplicados, recuentos incongruentes, tags desconocidos y argumentos de CLI inválidos. Las pruebas ejecutan el binario compilado en CI y requieren errores no-cero dentro de un timeout.
+- Benchmark de humo: tamaños de 256, 768 y 1600 nodos; dos muestras por tamaño y método; reporta mediana, p95, máximo, validez, tamaño de solución, método resuelto y fallbacks. Los resultados se guardan como artefacto de CI por versión Python.
 
-La ejecución CI más reciente pasó en Python 3.10, 3.11 y 3.12: `7 passed` por versión, compilación MORPH, smoke tests CLI y wheel instalado en un entorno virtual limpio fuera del repositorio. La integridad y estos casos límite quedan cubiertos por pruebas concretas, pero la suite sigue siendo una base inicial, no una prueba exhaustiva de seguridad ni de optimalidad.
+Evidencia más reciente observada: 90 pruebas pasan en Python 3.10, 3.11 y 3.12; en los mismos jobs pasaron el build MORPH, el benchmark de humo y la instalación/CLI desde wheel en entorno limpio. Esto permite revisar la rama para integración, pero no implica fuzzing ilimitado, una auditoría criptográfica externa ni pruebas de optimalidad.
