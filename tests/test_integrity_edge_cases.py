@@ -1,0 +1,48 @@
+from __future__ import annotations
+
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+from clan_subnet_detector.audit.signing import (
+    ed25519_verify,
+    sign_report_hmac,
+    verify_envelope_hmac,
+)
+from clan_subnet_detector.detection.independent_set import gwmin_independent, is_independent
+from clan_subnet_detector.graph.graph import Graph
+
+
+def test_hmac_envelope_detects_payload_tampering():
+    envelope = sign_report_hmac({"schema_version": "ztge.audit.v1", "value": 7}, b"test-secret")
+    assert verify_envelope_hmac(envelope, b"test-secret") == (True, "ok")
+
+    tampered = {**envelope, "payload": {**envelope["payload"], "value": 8}}
+    ok, reason = verify_envelope_hmac(tampered, b"test-secret")
+    assert not ok
+    assert reason == "content_hash mismatch"
+
+
+def test_ed25519_verifier_rejects_malformed_signature_without_raising():
+    private_key = Ed25519PrivateKey.generate()
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    assert ed25519_verify("abcd", "not-hex", public_pem) is False
+
+
+def test_independent_set_rejects_self_loop_and_greedy_skips_looped_vertex():
+    graph = Graph.from_edges(3, [(0, 0), (1, 2)])
+    assert not is_independent(graph, [0])
+    result = gwmin_independent(graph)
+    assert 0 not in result
+    assert is_independent(graph, result)
+
+
+def test_induced_subgraph_preserves_undirected_edge_weight():
+    graph = Graph.from_edges(3, [(0, 1, 2.5), (1, 2, 4.0)])
+    subgraph = graph.induced_subgraph([0, 1, 2])
+    assert subgraph.adj[0][1] == 2.5
+    assert subgraph.adj[1][0] == 2.5
+    assert subgraph.adj[1][2] == 4.0
+    assert subgraph.adj[2][1] == 4.0
