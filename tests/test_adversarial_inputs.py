@@ -5,7 +5,7 @@ import math
 import pytest
 
 from clan_subnet_detector.graph.graph import Graph
-from clan_subnet_detector.graph.temporal import TemporalGraph
+from clan_subnet_detector.graph.temporal import EdgeEvent, TemporalGraph
 from clan_subnet_detector.detection.independent_set import plan_independent
 from clan_subnet_detector.ingest.edge_list import (
     load_edge_list,
@@ -37,6 +37,12 @@ def test_graph_rejects_bad_endpoints_and_malformed_edge_tuples():
         Graph.from_edges(2, [(0, 1, 1.0, "extra")])
     with pytest.raises(ValueError, match="symmetric"):
         Graph(n=2, adj=[{1: 1.0}, {}])
+
+
+def test_graph_rejects_integer_weights_that_overflow_float_representation():
+    graph = Graph(n=2)
+    with pytest.raises(ValueError, match="representable"):
+        graph.add_edge(0, 1, 10**10000)
 
 
 def test_weight_overflow_does_not_partially_mutate_undirected_graph():
@@ -117,6 +123,13 @@ def test_netflow_loader_accepts_header_and_valid_csv(tmp_path):
     assert len(graph.events) == 1
     assert graph.events[0].weight == 100.0
     assert graph.events[0].ts == 10.0
+
+
+def test_temporal_graph_validates_events_supplied_to_constructor():
+    with pytest.raises(ValueError, match="finite"):
+        TemporalGraph(n=2, events=[EdgeEvent(0, 1, math.inf)])
+    with pytest.raises(ValueError, match="representable"):
+        TemporalGraph(n=2, events=[EdgeEvent(0, 1, 10**10000)])
 
 
 def test_temporal_graph_rejects_non_finite_data_and_reversed_windows():
