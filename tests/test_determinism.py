@@ -63,6 +63,11 @@ def test_identity_includes_closure_state():
     assert code_identity([factory(1)])["sha256"] != code_identity([factory(2)])["sha256"]
 
 
+def test_identity_handles_builtin_type_annotations_without_opaque_state():
+    result = code_identity([_linear])
+    assert result["complete"]
+
+
 def test_identity_marks_uninspectable_objects_incomplete():
     class MutableObject:
         pass
