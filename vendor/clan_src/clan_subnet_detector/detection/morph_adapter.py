@@ -316,6 +316,14 @@ def morph_independent(
     if inv is not None:
         # Every returned index has already been range-checked above.
         verts = [inv[v] for v in verts]
+    selected = set(verts)
+    if len(selected) != len(verts):
+        raise RuntimeError("MORPH returned duplicate vertices after remapping")
+    for u in selected:
+        if u in g.adj[u] or any(v in selected for v in g.adj[u]):
+            raise RuntimeError("MORPH returned a non-independent vertex set")
+    if selected.intersection(banned_set):
+        raise RuntimeError("MORPH returned a banned vertex")
     if k is not None and len(verts) > k:
         verts = verts[:k]
     info.size = len(verts)
