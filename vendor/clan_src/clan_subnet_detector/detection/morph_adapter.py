@@ -27,12 +27,14 @@ Fallback is the responsibility of ``plan_independent``.
 
 from __future__ import annotations
 
+import math
 import os
 import shutil
 import subprocess
 import tempfile
 import time
 from dataclasses import asdict, dataclass, field
+from numbers import Real
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -47,6 +49,7 @@ class MorphRunInfo:
     binary: str = ""
     binary_resolved: str = ""
     budget_ms: int = 0
+    process_timeout_s: float = 0.0
     seed: int = 1
     n_input: int = 0
     m_input: int = 0
@@ -181,6 +184,7 @@ def morph_independent(
     seed: int = 1,
     binary: Optional[Path] = None,
     info_out: Optional[List[MorphRunInfo]] = None,
+    process_timeout_s: Optional[float] = None,
 ) -> List[int]:
     """Call MORPH and return an independent set (0-indexed vertices)."""
     if isinstance(budget_ms, bool) or not isinstance(budget_ms, int) or budget_ms <= 0:
@@ -191,9 +195,21 @@ def morph_independent(
         isinstance(k, bool) or not isinstance(k, int) or k < 0
     ):
         raise ValueError("k must be None or a non-negative integer")
+    if process_timeout_s is None:
+        effective_timeout_s = max(5.0, budget_ms / 1000.0 + 2.0)
+    else:
+        if (
+            isinstance(process_timeout_s, bool)
+            or not isinstance(process_timeout_s, Real)
+            or not math.isfinite(float(process_timeout_s))
+            or float(process_timeout_s) <= 0
+        ):
+            raise ValueError("process_timeout_s must be a positive finite number")
+        effective_timeout_s = float(process_timeout_s)
 
     info = MorphRunInfo(
         budget_ms=budget_ms,
+        process_timeout_s=effective_timeout_s,
         seed=seed,
         n_input=g.n,
         m_input=g.edge_count(),
@@ -262,7 +278,7 @@ def morph_independent(
                     cmd,
                     capture_output=True,
                     text=True,
-                    timeout=max(5.0, budget_ms / 1000.0 + 2.0),
+                    timeout=effective_timeout_s,
                     check=False,
                 )
             except subprocess.TimeoutExpired as e:
