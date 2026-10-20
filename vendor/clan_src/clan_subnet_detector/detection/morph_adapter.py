@@ -198,14 +198,14 @@ def morph_independent(
     if process_timeout_s is None:
         effective_timeout_s = max(5.0, budget_ms / 1000.0 + 2.0)
     else:
-        if (
-            isinstance(process_timeout_s, bool)
-            or not isinstance(process_timeout_s, Real)
-            or not math.isfinite(float(process_timeout_s))
-            or float(process_timeout_s) <= 0
-        ):
+        if isinstance(process_timeout_s, bool) or not isinstance(process_timeout_s, Real):
             raise ValueError("process_timeout_s must be a positive finite number")
-        effective_timeout_s = float(process_timeout_s)
+        try:
+            effective_timeout_s = float(process_timeout_s)
+        except (OverflowError, TypeError, ValueError) as exc:
+            raise ValueError("process_timeout_s must be representable as a finite number") from exc
+        if not math.isfinite(effective_timeout_s) or effective_timeout_s <= 0:
+            raise ValueError("process_timeout_s must be a positive finite number")
 
     info = MorphRunInfo(
         budget_ms=budget_ms,
