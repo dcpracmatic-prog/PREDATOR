@@ -98,13 +98,18 @@ class Graph:
             if node < 0 or node >= self.n:
                 raise IndexError("node index out of range")
         weight = self._validate_weight(weight)
-        self.adj[u][v] = self.adj[u].get(v, 0.0) + weight
-        if not math.isfinite(self.adj[u][v]):
+        next_uv = self.adj[u].get(v, 0.0) + weight
+        if not math.isfinite(next_uv):
             raise ValueError("accumulated edge weight must be finite")
+        next_vu = next_uv
         if not self.directed and u != v:
-            self.adj[v][u] = self.adj[v].get(u, 0.0) + weight
-            if not math.isfinite(self.adj[v][u]):
+            next_vu = self.adj[v].get(u, 0.0) + weight
+            if not math.isfinite(next_vu):
                 raise ValueError("accumulated edge weight must be finite")
+        # Validate all new values before mutating either side of an undirected edge.
+        self.adj[u][v] = next_uv
+        if not self.directed and u != v:
+            self.adj[v][u] = next_vu
 
     def neighbors(self, u: int) -> Dict[int, float]:
         return self.adj[u]
