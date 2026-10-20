@@ -125,7 +125,10 @@ def gwmin_independent(
 def is_independent(g: Graph, nodes: Iterable[int]) -> bool:
     """Pure verifier: True iff no edge connects any pair in ``nodes``."""
     node_set = set(nodes)
-    if any(not isinstance(u, int) or u < 0 or u >= g.n for u in node_set):
+    if any(
+        isinstance(u, bool) or not isinstance(u, int) or u < 0 or u >= g.n
+        for u in node_set
+    ):
         return False
     for u in node_set:
         for v in g.adj[u]:
