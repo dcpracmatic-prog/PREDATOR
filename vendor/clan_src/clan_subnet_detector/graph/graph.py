@@ -66,7 +66,10 @@ class Graph:
     def _validate_weight(weight: Real) -> float:
         if isinstance(weight, bool) or not isinstance(weight, Real):
             raise TypeError("edge weight must be a finite real number")
-        value = float(weight)
+        try:
+            value = float(weight)
+        except (OverflowError, TypeError, ValueError) as exc:
+            raise ValueError("edge weight must be representable as a finite float") from exc
         if not math.isfinite(value):
             raise ValueError("edge weight must be finite")
         return value
