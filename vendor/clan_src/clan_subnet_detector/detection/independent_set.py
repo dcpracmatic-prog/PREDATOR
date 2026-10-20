@@ -35,7 +35,8 @@ def gwmin_independent(
     """GWMIN greedy independent set (weight / (degree + 1))."""
     n = g.n
     banned_set: Set[int] = set(banned or [])
-    alive = [i not in banned_set for i in range(n)]
+    # A vertex with a self-loop cannot belong to an independent set.
+    alive = [i not in banned_set and i not in g.adj[i] for i in range(n)]
     w = list(weights) if weights is not None else [1.0] * n
     if len(w) != n:
         raise ValueError("weights length must equal number of nodes")
@@ -84,9 +85,11 @@ def gwmin_independent(
 def is_independent(g: Graph, nodes: Iterable[int]) -> bool:
     """Pure verifier: True iff no edge connects any pair in ``nodes``."""
     node_set = set(nodes)
+    if any(not isinstance(u, int) or u < 0 or u >= g.n for u in node_set):
+        return False
     for u in node_set:
         for v in g.adj[u]:
-            if v in node_set and u != v:
+            if v in node_set:
                 return False
     return True
 
@@ -189,6 +192,10 @@ def plan_independent(
             seed=seed,
             info_out=morph_info,
         )
+        if len(set(verts)) != len(verts) or not is_independent(g, verts):
+            raise ValueError("MORPH returned an invalid independent-set candidate")
+        if banned is not None and set(verts).intersection(set(banned)):
+            raise ValueError("MORPH returned a banned vertex")
         # Safety: if MORPH is smaller than a free GWMIN would be, prefer GWMIN
         # only when sizes differ and we are in auto (quality floor).
         if requested == "auto":
