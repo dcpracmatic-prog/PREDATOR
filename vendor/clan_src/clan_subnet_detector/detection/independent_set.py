@@ -18,12 +18,48 @@ is available. Threshold is overridable via ``auto_n_threshold``.
 
 from __future__ import annotations
 
+import math
+from numbers import Real
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set
 
 from ..graph.graph import Graph
 
 # Empirical crossover from BA/ER degree≈6 benches: GWMIN cheaper below ~1.5–1.7k.
 DEFAULT_AUTO_N_THRESHOLD = 1500
+
+
+def _validated_banned(g: Graph, banned: Optional[Iterable[int]]) -> Set[int]:
+    try:
+        nodes = set(banned or [])
+    except TypeError as exc:
+        raise TypeError("banned must be an iterable of integer node IDs") from exc
+    for node in nodes:
+        if isinstance(node, bool) or not isinstance(node, int):
+            raise TypeError("banned node IDs must be integers")
+        if node < 0 or node >= g.n:
+            raise IndexError(f"banned node ID out of range: {node}")
+    return nodes
+
+
+def _validated_k(k: Optional[int]) -> Optional[int]:
+    if k is not None and (isinstance(k, bool) or not isinstance(k, int) or k < 0):
+        raise ValueError("k must be None or a non-negative integer")
+    return k
+
+
+def _validated_weights(weights: Optional[Sequence[float]], n: int) -> List[float]:
+    values = list(weights) if weights is not None else [1.0] * n
+    if len(values) != n:
+        raise ValueError("weights length must equal number of nodes")
+    checked = []
+    for index, value in enumerate(values):
+        if isinstance(value, bool) or not isinstance(value, Real):
+            raise TypeError(f"weight for node {index} must be a finite non-negative number")
+        value = float(value)
+        if not math.isfinite(value) or value < 0:
+            raise ValueError(f"weight for node {index} must be a finite non-negative number")
+        checked.append(value)
+    return checked
 
 
 def gwmin_independent(
@@ -34,12 +70,11 @@ def gwmin_independent(
 ) -> List[int]:
     """GWMIN greedy independent set (weight / (degree + 1))."""
     n = g.n
-    banned_set: Set[int] = set(banned or [])
+    _validated_k(k)
+    banned_set = _validated_banned(g, banned)
     # A vertex with a self-loop cannot belong to an independent set.
     alive = [i not in banned_set and i not in g.adj[i] for i in range(n)]
-    w = list(weights) if weights is not None else [1.0] * n
-    if len(w) != n:
-        raise ValueError("weights length must equal number of nodes")
+    w = _validated_weights(weights, n)
 
     deg = [0] * n
     for u in range(n):
@@ -130,9 +165,21 @@ def plan_independent(
     auto  : size-aware selection — GWMIN when n < auto_n_threshold (default 1500),
             else MORPH if available, else GWMIN. Never forces MORPH on tiny graphs.
     """
+    if not isinstance(method, str):
+        raise TypeError("method must be a string")
     requested = (method or "auto").lower().strip()
     if requested not in ("gwmin", "morph", "auto"):
         raise ValueError(f"Unknown independent-set method: {method!r}")
+    _validated_k(k)
+    if isinstance(budget_ms, bool) or not isinstance(budget_ms, int) or budget_ms <= 0:
+        raise ValueError("budget_ms must be a positive integer")
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+        raise ValueError("seed must be a non-negative integer")
+    if (isinstance(auto_n_threshold, bool) or not isinstance(auto_n_threshold, int)
+            or auto_n_threshold < 0):
+        raise ValueError("auto_n_threshold must be a non-negative integer")
+    banned = _validated_banned(g, banned)
+    weights = _validated_weights(weights, g.n)
 
     trace: Dict[str, Any] = {
         "requested": requested,
@@ -194,7 +241,7 @@ def plan_independent(
         )
         if len(set(verts)) != len(verts) or not is_independent(g, verts):
             raise ValueError("MORPH returned an invalid independent-set candidate")
-        if banned is not None and set(verts).intersection(set(banned)):
+        if set(verts).intersection(banned):
             raise ValueError("MORPH returned a banned vertex")
         # Safety: if MORPH is smaller than a free GWMIN would be, prefer GWMIN
         # only when sizes differ and we are in auto (quality floor).
