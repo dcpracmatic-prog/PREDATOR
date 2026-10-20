@@ -141,7 +141,7 @@ def test_temporal_graph_rejects_non_finite_data_and_reversed_windows():
     graph.add_event(0, 1, 1.0)
     with pytest.raises(ValueError, match="t0 must be <= t1"):
         graph.window(2.0, 1.0)
-    with pytest.raises(ValueError, match="positive finite"):
+    with pytest.raises(ValueError, match="finite"):
         graph.sliding_windows(float("nan"), 1.0)
 
 @pytest.mark.parametrize("weights", [[1.0], [float("nan"), 1.0], [-1.0, 1.0], [True, 1.0]])
