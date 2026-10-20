@@ -55,7 +55,12 @@ def _validated_weights(weights: Optional[Sequence[float]], n: int) -> List[float
     for index, value in enumerate(values):
         if isinstance(value, bool) or not isinstance(value, Real):
             raise TypeError(f"weight for node {index} must be a finite non-negative number")
-        value = float(value)
+        try:
+            value = float(value)
+        except (OverflowError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f"weight for node {index} must be representable as a finite number"
+            ) from exc
         if not math.isfinite(value) or value < 0:
             raise ValueError(f"weight for node {index} must be a finite non-negative number")
         checked.append(value)
