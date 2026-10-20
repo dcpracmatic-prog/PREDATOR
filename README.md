@@ -2,6 +2,8 @@
   <img src="assets/logo.png" alt="Logo" width="200"/>
 </p>
 
+[![ZTGE CI](https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine/actions/workflows/ci.yml)
+
 # Zero-Trust Graph Engine (ZTGE)
 
 Motor de optimización y análisis de grafos de baja latencia que combina heurísticas en C++ (`MORPH`) con un pipeline de detección, auditoría y verificación reutilizable desde Python.
