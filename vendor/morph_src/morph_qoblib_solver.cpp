@@ -31,83 +31,108 @@ static uint64_t splitmix64(uint64_t x)
 static Graph load_graph(const string& file)
 {
     ifstream in(file);
-
     if (!in)
         throw runtime_error("cannot open graph");
 
-    string tag;
-    string tmp;
+    // Explicit resource ceilings prevent hostile .gph headers from causing
+    // unbounded reserve/resize requests before any edges are parsed.
+    constexpr long long kMaxVertices = 2'000'000;
+    constexpr long long kMaxEdges = 10'000'000;
 
     int n = 0;
-    int m = 0;
+    size_t declared_m = 0;
+    bool header_seen = false;
+    vector<pair<int, int>> edges;
+    string line;
 
-    vector<pair<int,int>> edges;
+    auto check_trailing_fields = [](istringstream& row) {
+        string extra;
+        if (row >> extra && (extra.empty() || extra[0] != '#'))
+            throw runtime_error("unexpected trailing fields in graph record");
+    };
 
-    while (in >> tag) {
-
-        if (tag == "c") {
-            getline(in, tmp);
+    while (getline(in, line)) {
+        istringstream row(line);
+        string tag;
+        if (!(row >> tag))
             continue;
-        }
+        if (tag == "c" || (!tag.empty() && tag[0] == '#'))
+            continue;
 
         if (tag == "p") {
-
-            in >> tmp >> n >> m;
-
-            edges.reserve(m);
+            if (header_seen)
+                throw runtime_error("duplicate problem header");
+            string kind;
+            long long n_value = -1;
+            long long m_value = -1;
+            if (!(row >> kind >> n_value >> m_value))
+                throw runtime_error("malformed problem header");
+            check_trailing_fields(row);
+            if (kind != "edge")
+                throw runtime_error("unsupported graph format; expected 'p edge n m'");
+            if (n_value < 0 || n_value > kMaxVertices)
+                throw runtime_error("vertex count outside supported range");
+            if (m_value < 0 || m_value > kMaxEdges)
+                throw runtime_error("edge count outside supported range");
+            n = static_cast<int>(n_value);
+            declared_m = static_cast<size_t>(m_value);
+            edges.reserve(declared_m);
+            header_seen = true;
             continue;
         }
 
         if (tag == "e") {
-
-            int a, b;
-            in >> a >> b;
-
-            --a;
-            --b;
-
-            if (
-                a >= 0 &&
-                b >= 0 &&
-                a < n &&
-                b < n &&
-                a != b
-            ) {
-                edges.emplace_back(a,b);
-            }
+            if (!header_seen)
+                throw runtime_error("edge record appeared before problem header");
+            long long a_value = 0;
+            long long b_value = 0;
+            if (!(row >> a_value >> b_value))
+                throw runtime_error("malformed edge record; expected 'e u v'");
+            check_trailing_fields(row);
+            if (a_value < 1 || a_value > n || b_value < 1 || b_value > n)
+                throw runtime_error("edge endpoint outside declared vertex range");
+            if (a_value == b_value)
+                throw runtime_error("self-loops are not supported by the MORPH input format");
+            if (edges.size() >= declared_m)
+                throw runtime_error("more edge records than declared in problem header");
+            int a = static_cast<int>(a_value - 1);
+            int b = static_cast<int>(b_value - 1);
+            if (a > b)
+                swap(a, b);
+            edges.emplace_back(a, b);
+            continue;
         }
+
+        throw runtime_error("unknown graph record tag: " + tag);
     }
+
+    if (!header_seen)
+        throw runtime_error("missing problem header");
+    if (edges.size() != declared_m)
+        throw runtime_error("edge record count does not match problem header");
+    sort(edges.begin(), edges.end());
+    if (adjacent_find(edges.begin(), edges.end()) != edges.end())
+        throw runtime_error("duplicate edge record");
 
     Graph g;
-
     g.n = n;
-
     g.deg.assign(n, 0);
-
     g.off.assign(n + 1, 0);
-
-    for (auto [a,b] : edges) {
-
-        g.deg[a]++;
-        g.deg[b]++;
-
-        g.off[a + 1]++;
-        g.off[b + 1]++;
+    for (auto [a, b] : edges) {
+        ++g.deg[a];
+        ++g.deg[b];
+        ++g.off[a + 1];
+        ++g.off[b + 1];
     }
-
     for (int i = 0; i < n; ++i)
         g.off[i + 1] += g.off[i];
 
     g.adj.resize(g.off[n]);
-
     vector<int> cursor = g.off;
-
-    for (auto [a,b] : edges) {
-
+    for (auto [a, b] : edges) {
         g.adj[cursor[a]++] = b;
         g.adj[cursor[b]++] = a;
     }
-
     return g;
 }
 
