@@ -42,3 +42,13 @@ jobs:
         run: |
           ztge-status
           clan-detect --help
+      - name: Build wheel and verify clean installation
+        run: |
+          python -m pip wheel . --no-deps --wheel-dir /tmp/ztge-wheel
+          python -m venv /tmp/ztge-clean-venv
+          wheel="$(find /tmp/ztge-wheel -maxdepth 1 -name '*.whl' -print -quit)"
+          test -n "$wheel"
+          /tmp/ztge-clean-venv/bin/python -m pip install "${wheel}[yaml,crypto]"
+          cd /tmp
+          /tmp/ztge-clean-venv/bin/ztge-status
+          /tmp/ztge-clean-venv/bin/clan-detect --help
