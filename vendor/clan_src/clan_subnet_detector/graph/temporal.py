@@ -32,6 +32,27 @@ class TemporalGraph:
             raise ValueError("n must be non-negative")
         if not isinstance(self.directed, bool):
             raise TypeError("directed must be a bool")
+        try:
+            existing_events = list(self.events)
+        except TypeError as exc:
+            raise TypeError("events must be an iterable of EdgeEvent values") from exc
+        self.events = []
+        for event in existing_events:
+            if not isinstance(event, EdgeEvent):
+                raise TypeError("events must contain only EdgeEvent values")
+            self.add_event(event.u, event.v, event.ts, event.weight)
+
+    @staticmethod
+    def _finite_real(value: Real, label: str) -> float:
+        if isinstance(value, bool) or not isinstance(value, Real):
+            raise TypeError(f"{label} must be a finite real number")
+        try:
+            converted = float(value)
+        except (OverflowError, TypeError, ValueError) as exc:
+            raise ValueError(f"{label} must be representable as a finite float") from exc
+        if not math.isfinite(converted):
+            raise ValueError(f"{label} must be finite")
+        return converted
 
     def add_event(self, u: int, v: int, ts: float, weight: float = 1.0) -> None:
         for label, node in (("u", u), ("v", v)):
@@ -39,11 +60,9 @@ class TemporalGraph:
                 raise TypeError(f"event endpoint {label} must be an integer")
             if node < 0 or node >= self.n:
                 raise IndexError("node index out of range")
-        if isinstance(ts, bool) or not isinstance(ts, Real) or not math.isfinite(float(ts)):
-            raise ValueError("timestamp must be a finite real number")
-        if isinstance(weight, bool) or not isinstance(weight, Real) or not math.isfinite(float(weight)):
-            raise ValueError("event weight must be a finite real number")
-        self.events.append(EdgeEvent(u, v, float(ts), float(weight)))
+        timestamp = self._finite_real(ts, "timestamp")
+        edge_weight = self._finite_real(weight, "event weight")
+        self.events.append(EdgeEvent(u, v, timestamp, edge_weight))
 
     def time_range(self) -> Tuple[float, float]:
         if not self.events:
@@ -53,9 +72,8 @@ class TemporalGraph:
 
     def window(self, t0: float, t1: float) -> Graph:
         """Induce a static Graph from events with timestamps in [t0, t1]."""
-        for label, value in (("t0", t0), ("t1", t1)):
-            if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(float(value)):
-                raise ValueError(f"{label} must be a finite number")
+        t0 = self._finite_real(t0, "t0")
+        t1 = self._finite_real(t1, "t1")
         if t0 > t1:
             raise ValueError("t0 must be <= t1")
         edges = [
@@ -71,9 +89,10 @@ class TemporalGraph:
         step: float,
     ) -> List[Tuple[float, float, Graph]]:
         """Generate consecutive windows of a positive finite width and step."""
-        for label, value in (("width", width), ("step", step)):
-            if isinstance(value, bool) or not isinstance(value, Real) or not math.isfinite(float(value)) or value <= 0:
-                raise ValueError(f"{label} must be a positive finite number")
+        width = self._finite_real(width, "width")
+        step = self._finite_real(step, "step")
+        if width <= 0 or step <= 0:
+            raise ValueError("width and step must be positive finite numbers")
         t_min, t_max = self.time_range()
         windows: List[Tuple[float, float, Graph]] = []
         t = t_min
