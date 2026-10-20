@@ -59,3 +59,8 @@ Asegurar y probar: nodos fuera de rango, aristas duplicadas, auto-bucles, grafo 
 - Informes reproducibles y verificables por un consumidor independiente.
 - Benchmarks que distingan latencia interna de latencia total y calidad de la solución.
 - Documentación consistente con el comportamiento comprobado, sin atribuir optimalidad a una heurística ni garantías de seguridad no demostradas.
+## Incidencia CI detectada y corrección aplicada
+
+Los primeros seis checks fallaron al ejecutar `ztge-status`, después de que MORPH compilara correctamente y las dos pruebas existentes pasaran. Error observado en los logs: `ModuleNotFoundError: No module named 'ztge_status_entry'`. La causa era un punto de entrada de consola que referenciaba un módulo no incluido de forma importable en la instalación.
+
+Corrección aplicada en la rama de consolidación: el punto de entrada ahora apunta a `clan_subnet_detector.status_cli:main`, módulo incluido en el paquete instalado. La corrección debe considerarse provisional hasta que una nueva ejecución de CI confirme los seis jobs. El hecho de que las dos pruebas pasaran no equivale a validar el comportamiento completo del motor.
