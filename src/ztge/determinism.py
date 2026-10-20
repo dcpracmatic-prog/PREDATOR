@@ -277,9 +277,18 @@ def expected_work(hops: int, *, intercept: float, slope: float) -> float:
     if isinstance(hops, bool) or not isinstance(hops, int) or hops < 0:
         raise ValueError("hops must be a non-negative integer")
     for name, value in (("intercept", intercept), ("slope", slope)):
-        if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
             raise ValueError(name + " must be a finite non-negative number")
-    return float(intercept + slope * hops)
+        try:
+            finite = math.isfinite(value)
+        except (OverflowError, TypeError):
+            finite = False
+        if not finite:
+            raise ValueError(name + " must be a finite non-negative number")
+    result = intercept + slope * hops
+    if not math.isfinite(float(result)):
+        raise ValueError("computed work must be finite")
+    return float(result)
 
 
 def evidence_manifest(*, identity: Mapping[str, Any], measurement: Measurement | None = None, work: WorkCount | None = None) -> dict[str, Any]:
