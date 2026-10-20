@@ -165,6 +165,8 @@ def _describe(value: Any, stack: set[int], opaque: list[str]) -> Any:
         return {"float_hex": value.hex()} if math.isfinite(value) else {"nonfinite_float": repr(value)}
     if isinstance(value, bytes):
         return {"bytes_hex": value.hex()}
+    if isinstance(value, type):
+        return {"type": value.__module__ + "." + value.__qualname__}
     if isinstance(value, types.CodeType):
         return {
             "bytecode": value.co_code.hex(), "names": list(value.co_names),
