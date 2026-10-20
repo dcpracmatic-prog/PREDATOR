@@ -1,12 +1,22 @@
-"""Edge-list and minimal NetFlow-style loaders."""
+"""Strict parsers for static, timestamped, and NetFlow-style edge lists."""
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from ..graph.graph import Graph
-from ..graph.temporal import EdgeEvent, TemporalGraph
+from ..graph.temporal import TemporalGraph
+
+
+def _parse_node_pair(parts: list[str], line_number: int) -> tuple[int, int]:
+    if len(parts) < 2:
+        raise ValueError(f"line {line_number}: expected at least two node IDs")
+    try:
+        return int(parts[0]), int(parts[1])
+    except ValueError as exc:
+        raise ValueError(f"line {line_number}: node IDs must be integers") from exc
 
 
 def load_edge_list(
@@ -14,37 +24,44 @@ def load_edge_list(
     directed: bool = False,
     weighted: bool = False,
 ) -> Graph:
-    """Load a simple edge list (static).
+    """Load strict whitespace-delimited edges: u v or u v weight.
 
-    Format (whitespace-separated):
-        u v          # unweighted
-        u v w        # weighted (if weighted=True)
+    Blank lines, full-line comments, and inline comments starting with # are
+    ignored. Node IDs are remapped to a contiguous zero-based range.
     """
     path = Path(path)
     raw_edges: List[Tuple[int, int, float]] = []
     nodes = set()
-    with path.open(encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split()
-            u, v = int(parts[0]), int(parts[1])
-            w = float(parts[2]) if weighted and len(parts) > 2 else 1.0
-            raw_edges.append((u, v, w))
-            nodes.add(u)
-            nodes.add(v)
+    for line_number, raw_line in enumerate(path.open(encoding="utf-8"), start=1):
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = line.split()
+        expected = 3 if weighted else 2
+        if len(parts) != expected:
+            raise ValueError(
+                f"line {line_number}: expected exactly {expected} fields "
+                f"for {'weighted' if weighted else 'unweighted'} input, got {len(parts)}"
+            )
+        u, v = _parse_node_pair(parts, line_number)
+        try:
+            weight = float(parts[2]) if weighted else 1.0
+        except ValueError as exc:
+            raise ValueError(f"line {line_number}: edge weight must be numeric") from exc
+        if not math.isfinite(weight):
+            raise ValueError(f"line {line_number}: edge weight must be finite")
+        raw_edges.append((u, v, weight))
+        nodes.update((u, v))
 
     if not nodes:
         return Graph(n=0, directed=directed)
 
     sorted_nodes = sorted(nodes)
     mapping = {old: new for new, old in enumerate(sorted_nodes)}
-    n = len(sorted_nodes)
-    g = Graph(n=n, directed=directed)
-    for u, v, w in raw_edges:
-        g.add_edge(mapping[u], mapping[v], w)
-    return g
+    graph = Graph(n=len(sorted_nodes), directed=directed)
+    for u, v, weight in raw_edges:
+        graph.add_edge(mapping[u], mapping[v], weight)
+    return graph
 
 
 def load_timestamped_edge_list(
@@ -53,83 +70,92 @@ def load_timestamped_edge_list(
     ts_index: int = 2,
     weight_index: Optional[int] = None,
 ) -> TemporalGraph:
-    """Load timestamped edges into a TemporalGraph.
+    """Load u v timestamp [weight] rows, remapping node IDs to 0..n-1."""
+    if isinstance(ts_index, bool) or not isinstance(ts_index, int) or ts_index < 2:
+        raise ValueError("ts_index must be an integer >= 2")
+    if weight_index is not None:
+        if isinstance(weight_index, bool) or not isinstance(weight_index, int) or weight_index < 2:
+            raise ValueError("weight_index must be None or an integer >= 2")
+        if weight_index == ts_index:
+            raise ValueError("weight_index and ts_index must differ")
 
-    Default format:
-        u v timestamp [weight]
-
-    Indices are 0-based over whitespace-split fields.
-    Node IDs are remapped to a contiguous 0..n-1 range.
-    """
     path = Path(path)
     raw: List[Tuple[int, int, float, float]] = []
     nodes = set()
-    with path.open(encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.split()
-            u, v = int(parts[0]), int(parts[1])
-            ts = float(parts[ts_index])
-            w = float(parts[weight_index]) if weight_index is not None and len(parts) > weight_index else 1.0
-            raw.append((u, v, ts, w))
-            nodes.add(u)
-            nodes.add(v)
+    last_index = max(ts_index, weight_index if weight_index is not None else 0)
+    for line_number, raw_line in enumerate(path.open(encoding="utf-8"), start=1):
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = line.split()
+        if len(parts) <= last_index:
+            raise ValueError(f"line {line_number}: missing timestamp or configured weight field")
+        u, v = _parse_node_pair(parts, line_number)
+        try:
+            timestamp = float(parts[ts_index])
+            weight = float(parts[weight_index]) if weight_index is not None else 1.0
+        except ValueError as exc:
+            raise ValueError(f"line {line_number}: timestamp and weight must be numeric") from exc
+        if not math.isfinite(timestamp):
+            raise ValueError(f"line {line_number}: timestamp must be finite")
+        if not math.isfinite(weight):
+            raise ValueError(f"line {line_number}: weight must be finite")
+        raw.append((u, v, timestamp, weight))
+        nodes.update((u, v))
 
     if not nodes:
         return TemporalGraph(n=0, directed=directed)
 
     sorted_nodes = sorted(nodes)
     mapping = {old: new for new, old in enumerate(sorted_nodes)}
-    tg = TemporalGraph(n=len(sorted_nodes), directed=directed)
-    for u, v, ts, w in raw:
-        tg.add_event(mapping[u], mapping[v], ts, w)
-    return tg
+    graph = TemporalGraph(n=len(sorted_nodes), directed=directed)
+    for u, v, timestamp, weight in raw:
+        graph.add_event(mapping[u], mapping[v], timestamp, weight)
+    return graph
 
 
 def load_netflow_summary(
     path: str | Path,
     directed: bool = True,
 ) -> TemporalGraph:
-    """Minimal NetFlow-style CSV/edge summary.
+    """Load src dst bytes packets start_ts [end_ts] CSV/edge summaries.
 
-    Expected columns (header optional, detected by non-numeric first field):
-        src dst bytes packets start_ts [end_ts]
-
-    Uses start_ts as event timestamp and bytes as weight.
+    A header is allowed on the first nonempty row; malformed rows are rejected
+    instead of silently skipped or replaced with default values.
     """
     path = Path(path)
     raw: List[Tuple[int, int, float, float]] = []
     nodes = set()
-    with path.open(encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line or line.startswith("#"):
-                continue
-            parts = line.replace(",", " ").split()
-            # skip header
-            try:
-                u, v = int(parts[0]), int(parts[1])
-            except ValueError:
-                continue
-            # try: src dst bytes packets start_ts
-            try:
-                weight = float(parts[2]) if len(parts) > 2 else 1.0
-                ts = float(parts[4]) if len(parts) > 4 else float(parts[2])
-            except (ValueError, IndexError):
-                weight = 1.0
-                ts = 0.0
-            raw.append((u, v, ts, weight))
-            nodes.add(u)
-            nodes.add(v)
+    saw_data = False
+    for line_number, raw_line in enumerate(path.open(encoding="utf-8"), start=1):
+        line = raw_line.split("#", 1)[0].strip()
+        if not line:
+            continue
+        parts = line.replace(",", " ").split()
+        if len(parts) >= 2 and parts[0].lower() in {"src", "source", "source_ip", "source_id"}:
+            if saw_data:
+                raise ValueError(f"line {line_number}: header found after data rows")
+            continue
+        if len(parts) < 5:
+            raise ValueError(f"line {line_number}: expected at least 5 NetFlow fields")
+        u, v = _parse_node_pair(parts, line_number)
+        try:
+            weight = float(parts[2])
+            timestamp = float(parts[4])
+        except ValueError as exc:
+            raise ValueError(f"line {line_number}: bytes and start_ts must be numeric") from exc
+        if not math.isfinite(weight) or not math.isfinite(timestamp):
+            raise ValueError(f"line {line_number}: bytes and start_ts must be finite")
+        raw.append((u, v, timestamp, weight))
+        nodes.update((u, v))
+        saw_data = True
 
     if not nodes:
         return TemporalGraph(n=0, directed=directed)
 
     sorted_nodes = sorted(nodes)
     mapping = {old: new for new, old in enumerate(sorted_nodes)}
-    tg = TemporalGraph(n=len(sorted_nodes), directed=directed)
-    for u, v, ts, w in raw:
-        tg.add_event(mapping[u], mapping[v], ts, w)
-    return tg
+    graph = TemporalGraph(n=len(sorted_nodes), directed=directed)
+    for u, v, timestamp, weight in raw:
+        graph.add_event(mapping[u], mapping[v], timestamp, weight)
+    return graph
