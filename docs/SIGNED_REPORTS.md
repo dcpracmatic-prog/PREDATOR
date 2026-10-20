@@ -46,7 +46,10 @@ assert ok, reason
 # the corresponding public key to independent auditors.
 from clan_subnet_detector.audit import sign_report_ed25519, verify_envelope_ed25519
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+# Demonstration only: in production, load a persistent protected private key.
+private_key = Ed25519PrivateKey.generate()
 private_pem = private_key.private_bytes(
     encoding=serialization.Encoding.PEM,
     format=serialization.PrivateFormat.PKCS8,
