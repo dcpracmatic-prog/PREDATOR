@@ -12,7 +12,7 @@ El repositorio ya reúne un SDK Python, una heurística nativa C++ (`MORPH`), ve
 ### P0 — Verificación real antes de declarar una versión consolidada
 
 - La documentación describe rutas de instalación y pruebas, pero el estado de GitHub Actions no se ha verificado desde esta auditoría. Se añade un workflow de CI para construir MORPH y ejecutar la suite en Python 3.10–3.12.
-- El workflow debe pasar en GitHub antes de afirmar que la consolidación está validada. Esta edición no equivale a una ejecución de pruebas.
+- Verificación inicial completada: seis jobs en Python 3.10–3.12 pasaron tras corregir el entry point `ztge-status`. Esto valida la instalación editable y los smoke tests del CLI, pero no cierra la auditoría del motor.
 
 ### P1 — Contrato de firma y verificación independiente
 
@@ -61,6 +61,15 @@ Asegurar y probar: nodos fuera de rango, aristas duplicadas, auto-bucles, grafo 
 - Documentación consistente con el comportamiento comprobado, sin atribuir optimalidad a una heurística ni garantías de seguridad no demostradas.
 ## Incidencia CI detectada y corrección aplicada
 
-Los primeros seis checks fallaron al ejecutar `ztge-status`, después de que MORPH compilara correctamente y las dos pruebas existentes pasaran. Error observado en los logs: `ModuleNotFoundError: No module named 'ztge_status_entry'`. La causa era un punto de entrada de consola que referenciaba un módulo no incluido de forma importable en la instalación.
+Los primeros seis checks fallaron al ejecutar `ztge-status`, después de que MORPH compilara correctamente y las dos pruebas existentes pasaran. Error observado: `ModuleNotFoundError: No module named 'ztge_status_entry'`. La causa era un punto de entrada de consola que referenciaba un módulo no incluido de forma importable en la instalación.
 
-Corrección aplicada en la rama de consolidación: el punto de entrada ahora apunta a `clan_subnet_detector.status_cli:main`, módulo incluido en el paquete instalado. La corrección debe considerarse provisional hasta que una nueva ejecución de CI confirme los seis jobs. El hecho de que las dos pruebas pasaran no equivale a validar el comportamiento completo del motor.
+Corrección aplicada: el punto de entrada ahora apunta a `clan_subnet_detector.status_cli:main`. GitHub Actions confirmó después los seis jobs (Python 3.10, 3.11 y 3.12 en dos ejecuciones); los pasos de instalación, compilación MORPH, pruebas y smoke tests del CLI terminaron en verde.
+
+## Hallazgos de auditoría de casos límite
+
+- Corregido el subgrafo inducido no dirigido: antes insertaba dos veces cada arista almacenada en ambas listas de adyacencia, duplicando pesos.
+- Corregido el verificador de conjunto independiente para rechazar vértices con auto-bucle y nodos fuera de rango; GWMIN ya no selecciona vértices con auto-bucle.
+- El verificador Ed25519 ahora trata una firma hexadecimal malformada o un hash no ASCII como verificación fallida, en lugar de propagar la excepción.
+- Añadidas pruebas de regresión para manipulación del payload firmado, firma Ed25519 malformada, auto-bucles y preservación de pesos.
+
+El CI se amplía ahora para construir un wheel e instalarlo en un entorno virtual separado, ejecutando ambos comandos fuera del árbol del repositorio. Esa nueva comprobación aún requiere una ejecución verde. La cobertura actual de pruebas era mínima; estos cambios no bastan para declarar el motor completamente consolidado.
