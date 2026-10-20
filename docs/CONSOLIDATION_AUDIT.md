@@ -70,6 +70,6 @@ Corrección aplicada: el punto de entrada ahora apunta a `clan_subnet_detector.s
 - Corregido el subgrafo inducido no dirigido: antes insertaba dos veces cada arista almacenada en ambas listas de adyacencia, duplicando pesos.
 - Corregido el verificador de conjunto independiente para rechazar vértices con auto-bucle y nodos fuera de rango; GWMIN ya no selecciona vértices con auto-bucle.
 - El verificador Ed25519 ahora trata una firma hexadecimal malformada o un hash no ASCII como verificación fallida, en lugar de propagar la excepción.
-- Añadidas pruebas de regresión para manipulación del payload firmado, firma Ed25519 malformada, auto-bucles y preservación de pesos.
+- Añadidas pruebas de regresión para manipulación de payloads HMAC/Ed25519, ciclo completo Ed25519, firma malformada, auto-bucles y preservación de pesos.
 
-El CI se amplía ahora para construir un wheel e instalarlo en un entorno virtual separado, ejecutando ambos comandos fuera del árbol del repositorio. Esa nueva comprobación aún requiere una ejecución verde. La cobertura actual de pruebas era mínima; estos cambios no bastan para declarar el motor completamente consolidado.
+La ejecución CI más reciente pasó en Python 3.10, 3.11 y 3.12: `7 passed` por versión, compilación MORPH, smoke tests CLI y wheel instalado en un entorno virtual limpio fuera del repositorio. La integridad y estos casos límite quedan cubiertos por pruebas concretas, pero la suite sigue siendo una base inicial, no una prueba exhaustiva de seguridad ni de optimalidad.
