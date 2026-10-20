@@ -19,7 +19,7 @@ dev = ["pytest>=7.0", "pyyaml>=6.0"]
 exact = ["ortools>=9.0"]
 
 [project.scripts]
-ztge-status = "ztge_status_entry:main"
+ztge-status = "clan_subnet_detector.status_cli:main"
 clan-detect = "clan_subnet_detector.cli:main"
 
 [tool.setuptools.packages.find]

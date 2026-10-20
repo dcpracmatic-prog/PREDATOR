@@ -147,6 +147,8 @@ docs/                # Arquitectura, packaging, reportes firmados
 
 ## Documentación adicional
 
+- [Auditoría de consolidación y criterios de aceptación](docs/CONSOLIDATION_AUDIT.md) — riesgos técnicos pendientes, orden de corrección y condiciones para declarar una versión consolidada.
+
 | Documento | Contenido |
 |-----------|-----------|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Capas del motor |
