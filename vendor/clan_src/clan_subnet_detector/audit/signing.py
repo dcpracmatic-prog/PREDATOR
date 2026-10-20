@@ -141,6 +141,19 @@ def sign_report_hmac(
     return wrap_envelope(payload, integrity, producer=producer)
 
 
+def sign_report_ed25519(
+    report: Mapping[str, Any],
+    private_key_pem: bytes,
+    *,
+    key_id: str = "ed25519:default",
+    producer: Optional[Mapping[str, str]] = None,
+) -> Dict[str, Any]:
+    """Attach a content hash and return an Ed25519-signed envelope."""
+    payload = attach_content_hash(dict(report))
+    integrity = ed25519_sign(payload["content_hash"], private_key_pem, key_id=key_id)
+    return wrap_envelope(payload, integrity, producer=producer)
+
+
 def verify_envelope_hmac(envelope: Mapping[str, Any], secret: bytes) -> Tuple[bool, str]:
     """Verify HMAC envelope. Returns (ok, reason)."""
     if envelope.get("envelope_version") != ENVELOPE_VERSION:
@@ -158,6 +171,35 @@ def verify_envelope_hmac(envelope: Mapping[str, Any], secret: bytes) -> Tuple[bo
     if payload.get("content_hash") != expected_hash:
         return False, "payload content_hash field mismatch"
     if not hmac_verify(expected_hash, str(integrity.get("signature", "")), secret):
+        return False, "signature invalid"
+    return True, "ok"
+
+
+def verify_envelope_ed25519(
+    envelope: Mapping[str, Any], public_key_pem: bytes
+) -> Tuple[bool, str]:
+    """Verify envelope version, canonical payload hash, and Ed25519 signature."""
+    if not isinstance(envelope, Mapping):
+        return False, "invalid envelope"
+    if envelope.get("envelope_version") != ENVELOPE_VERSION:
+        return False, "unsupported envelope_version"
+    payload = envelope.get("payload")
+    integrity = envelope.get("integrity")
+    if not isinstance(payload, dict):
+        return False, "missing payload"
+    if not isinstance(integrity, Mapping):
+        return False, "missing integrity"
+    if integrity.get("alg") != "Ed25519":
+        return False, f"unexpected alg {integrity.get('alg')}"
+    expected_hash = content_hash_for_report(payload)
+    if integrity.get("content_hash") != expected_hash:
+        return False, "content_hash mismatch"
+    if payload.get("content_hash") != expected_hash:
+        return False, "payload content_hash field mismatch"
+    signature = integrity.get("signature")
+    if not isinstance(signature, str) or not ed25519_verify(
+        expected_hash, signature, public_key_pem
+    ):
         return False, "signature invalid"
     return True, "ok"
 
