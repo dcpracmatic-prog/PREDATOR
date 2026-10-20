@@ -5,7 +5,9 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from clan_subnet_detector.audit.signing import (
     ed25519_verify,
+    sign_report_ed25519,
     sign_report_hmac,
+    verify_envelope_ed25519,
     verify_envelope_hmac,
 )
 from clan_subnet_detector.detection.independent_set import gwmin_independent, is_independent
@@ -18,6 +20,26 @@ def test_hmac_envelope_detects_payload_tampering():
 
     tampered = {**envelope, "payload": {**envelope["payload"], "value": 8}}
     ok, reason = verify_envelope_hmac(tampered, b"test-secret")
+    assert not ok
+    assert reason == "content_hash mismatch"
+
+
+def test_ed25519_envelope_round_trip_and_tamper_detection():
+    private_key = Ed25519PrivateKey.generate()
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    public_pem = private_key.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    envelope = sign_report_ed25519({"schema_version": "ztge.audit.v1", "value": 11}, private_pem)
+    assert verify_envelope_ed25519(envelope, public_pem) == (True, "ok")
+
+    tampered = {**envelope, "payload": {**envelope["payload"], "value": 12}}
+    ok, reason = verify_envelope_ed25519(tampered, public_pem)
     assert not ok
     assert reason == "content_hash mismatch"
 
