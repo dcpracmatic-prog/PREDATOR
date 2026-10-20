@@ -27,6 +27,13 @@ def test_graph_rejects_non_finite_or_non_numeric_edge_weights(weight):
         graph.add_edge(0, 1, weight)
 
 
+def test_independent_verifier_rejects_boolean_node_identifiers():
+    graph = Graph.from_edges(2, [(0, 1)])
+    from clan_subnet_detector.detection.independent_set import is_independent
+    assert is_independent(graph, [0]) is True
+    assert is_independent(graph, [True]) is False
+
+
 def test_graph_rejects_bad_endpoints_and_malformed_edge_tuples():
     graph = Graph(n=2)
     with pytest.raises(TypeError):
