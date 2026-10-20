@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from subprocess import CompletedProcess, TimeoutExpired
+import time
 
 import pytest
 
@@ -116,6 +118,37 @@ def test_morph_excludes_self_loop_vertices_before_serialization(tmp_path, monkey
     assert result == [1]
     assert "excluded_self_loops=1" in info[0].notes
     assert captured["gph"].splitlines()[0] == "p edge 2 1"
+
+
+@pytest.mark.parametrize("timeout_s", [0, -1, float("nan"), float("inf"), True, "0.1"])
+def test_morph_api_rejects_invalid_process_timeouts(tmp_path, timeout_s):
+    with pytest.raises(ValueError, match="process_timeout_s"):
+        morph_adapter.morph_independent(
+            Graph.from_edges(2, [(0, 1)]),
+            binary=_stub_binary(tmp_path),
+            process_timeout_s=timeout_s,
+        )
+
+
+@pytest.mark.skipif(os.name != "posix", reason="real executable-timeout test requires POSIX shebang support")
+def test_morph_real_stalling_process_is_terminated_by_outer_timeout(tmp_path):
+    binary = _stub_binary(tmp_path)
+    binary.write_text("#!/usr/bin/env python3\nimport time\ntime.sleep(3)\n", encoding="utf-8")
+    binary.chmod(0o755)
+    info = []
+    started = time.perf_counter()
+    with pytest.raises(RuntimeError, match="timed out"):
+        morph_adapter.morph_independent(
+            Graph.from_edges(2, [(0, 1)]),
+            binary=binary,
+            process_timeout_s=0.05,
+            info_out=info,
+        )
+    elapsed = time.perf_counter() - started
+    assert elapsed < 2.0, f"outer timeout failed to terminate child promptly: {elapsed:.2f}s"
+    assert info and info[0].ok is False
+    assert info[0].process_timeout_s == 0.05
+    assert "timed out" in info[0].error
 
 
 def test_morph_api_rejects_invalid_budgets_seeds_and_banned_nodes(tmp_path):
