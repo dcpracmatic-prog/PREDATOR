@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZTGE Software Assurance Evidence Bundle",
+  "description": "Traceability record linking a source change, verification checks, findings, repair candidates, and the gate decision. Structure does not prove the truth of claims.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "run_id", "created_at_utc", "subject", "policy", "checks", "decision"],
+  "properties": {
+    "schema_version": { "const": "ztge.evidence.v1" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "created_at_utc": { "type": "string", "format": "date-time" },
+    "subject": {
+      "type": "object", "additionalProperties": false,
+      "required": ["repository", "base_commit", "head_commit", "source_tree_sha256"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "base_commit": { "type": "string", "minLength": 1 },
+        "head_commit": { "type": "string", "minLength": 1 },
+        "source_tree_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+        "changed_paths": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+      }
+    },
+    "policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policy_id", "policy_version", "mandatory_check_ids"],
+      "properties": {
+        "policy_id": { "type": "string" },
+        "policy_version": { "type": "string" },
+        "mandatory_check_ids": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["check_id", "kind", "status", "command", "started_at_utc", "duration_ms", "exit_code", "tool"],
+        "properties": {
+          "check_id": { "type": "string" },
+          "kind": { "enum": ["unit", "regression", "security", "contract", "formal", "build", "integration", "performance", "other"] },
+          "status": { "enum": ["PASS", "FAIL", "UNKNOWN", "SKIPPED", "NOT_APPLICABLE"] },
+          "command": { "type": "array", "items": { "type": "string" } },
+          "started_at_utc": { "type": "string", "format": "date-time" },
+          "duration_ms": { "type": "integer", "minimum": 0 },
+          "exit_code": { "type": ["integer", "null"] },
+          "timed_out": { "type": "boolean", "default": false },
+          "tool": { "type": "object", "required": ["name", "version"], "additionalProperties": false, "properties": { "name": { "type": "string" }, "version": { "type": "string" } } },
+          "scope": { "type": "string" },
+          "assumptions": { "type": "array", "items": { "type": "string" } },
+          "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifact" } },
+          "notes": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "findings": { "type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["finding_id", "severity", "title", "status"],
+      "properties": {
+        "finding_id": { "type": "string" },
+        "severity": { "enum": ["critical", "high", "medium", "low", "info"] },
+        "title": { "type": "string" },
+        "status": { "enum": ["open", "reproduced", "fixed_candidate", "verified", "accepted_risk", "unresolved"] },
+        "related_check_ids": { "type": "array", "items": { "type": "string" } },
+        "reproducer_artifact": { "$ref": "#/$defs/artifact" },
+        "root_cause_hypothesis": { "type": "string" }
+      }
+    } },
+    "repair_candidates": { "type": "array", "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["candidate_id", "patch_sha256", "status"],
+      "properties": {
+        "candidate_id": { "type": "string" },
+        "patch_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+        "status": { "enum": ["proposed", "rejected", "verified", "needs_human_review"] },
+        "agent_id": { "type": "string" },
+        "related_finding_ids": { "type": "array", "items": { "type": "string" } },
+        "verification_check_ids": { "type": "array", "items": { "type": "string" } },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    } },
+    "decision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "reason_codes", "promotion_allowed"],
+      "properties": {
+        "status": { "enum": ["ACCEPT", "REJECT", "BLOCKED", "NEEDS_HUMAN_REVIEW"] },
+        "reason_codes": { "type": "array", "items": { "type": "string" } },
+        "promotion_allowed": { "type": "boolean" },
+        "approved_by": { "type": "string" },
+        "approved_at_utc": { "type": "string", "format": "date-time" }
+      }
+    },
+    "integrity": { "type": "object", "additionalProperties": false, "properties": {
+      "canonicalization": { "type": "string" },
+      "content_sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+      "signature_algorithm": { "type": "string" },
+      "key_id": { "type": "string" },
+      "signature": { "type": "string" }
+    } }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "sha256"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+        "media_type": { "type": "string" },
+        "uri": { "type": "string" }
+      }
+    }
+  }
+}
