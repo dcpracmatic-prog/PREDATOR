@@ -113,6 +113,16 @@ PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --demo --method au
 
 ---
 
+
+## API HTTP (B2B)
+
+```bash
+PYTHONPATH=src:vendor/clan_src python -m ztge.api.server --port 8080
+# OpenAPI: http://127.0.0.1:8080/openapi.json
+```
+
+Documentación: [docs/API.md](docs/API.md) · especificación [openapi/openapi.yaml](openapi/openapi.yaml).
+
 ## Benchmarks locales
 
 Un solo script genera CSV, JSON, Markdown y gráficos en `results/<UTC>_<commit>/`:

@@ -1,0 +1,228 @@
+openapi: 3.1.0
+info:
+  title: Zero-Trust Graph Engine API
+  version: 0.1.0
+  description: |
+    Fachada HTTP B2B sobre el planificador de conjuntos independientes y el
+    pipeline de auditoría firmable (`ztge.audit.v1` / `ztge.envelope.v1`).
+  license:
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local default
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Liveness probe
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /v1/status:
+    get:
+      operationId: status
+      summary: Engine and MORPH binary status
+      responses:
+        "200":
+          description: Status payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Status"
+  /v1/plan:
+    post:
+      operationId: planIndependent
+      summary: Compute an independent set (no full audit report)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanRequest"
+      responses:
+        "200":
+          description: Independent-set result with planner trace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /v1/audit:
+    post:
+      operationId: auditGraph
+      summary: Run full audit and return ztge.audit.v1 report (optionally signed)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuditRequest"
+      responses:
+        "200":
+          description: Audit report and optional signed envelope
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuditResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        engine:
+          type: string
+    Status:
+      type: object
+      required: [engine, version, morph]
+      properties:
+        engine:
+          type: string
+        version:
+          type: string
+        clan_version:
+          type: string
+        morph:
+          type: object
+          additionalProperties: true
+        contracts:
+          type: array
+          items:
+            type: string
+    GraphInput:
+      type: object
+      required: [n, edges]
+      properties:
+        n:
+          type: integer
+          minimum: 0
+          description: Number of nodes (0 .. n-1)
+        edges:
+          type: array
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items:
+              type: integer
+              minimum: 0
+          description: Undirected edge list [u, v]
+        directed:
+          type: boolean
+          default: false
+    PlanRequest:
+      type: object
+      required: [graph]
+      properties:
+        graph:
+          $ref: "#/components/schemas/GraphInput"
+        method:
+          type: string
+          enum: [auto, morph, gwmin]
+          default: auto
+        budget_ms:
+          type: integer
+          minimum: 1
+          maximum: 600000
+          default: 100
+        seed:
+          type: integer
+          default: 1
+        auto_n_threshold:
+          type: integer
+          minimum: 1
+          default: 1500
+    PlanResponse:
+      type: object
+      required: [nodes, size, verified, trace]
+      properties:
+        nodes:
+          type: array
+          items:
+            type: integer
+        size:
+          type: integer
+        verified:
+          type: boolean
+        trace:
+          type: object
+          additionalProperties: true
+    AuditRequest:
+      type: object
+      required: [graph]
+      properties:
+        graph:
+          $ref: "#/components/schemas/GraphInput"
+        method:
+          type: string
+          enum: [auto, morph, gwmin]
+          default: auto
+        budget_ms:
+          type: integer
+          minimum: 1
+          maximum: 600000
+          default: 100
+        seed:
+          type: integer
+          default: 1
+        sign:
+          type: boolean
+          default: true
+          description: If true and ZTGE_HMAC_SECRET is set, include signed envelope
+        key_id:
+          type: string
+          default: hmac:default
+        include_dense:
+          type: boolean
+          default: true
+        k_core_k:
+          type: integer
+          minimum: 1
+          default: 3
+        graph_source:
+          type: string
+          nullable: true
+    AuditResponse:
+      type: object
+      required: [report]
+      properties:
+        report:
+          description: Body conforming to ztge.audit.v1
+          type: object
+          additionalProperties: true
+        envelope:
+          description: ztge.envelope.v1 when signing succeeds
+          type: object
+          nullable: true
+          additionalProperties: true
+        signed:
+          type: boolean
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        details:
+          type: array
+          items:
+            type: string

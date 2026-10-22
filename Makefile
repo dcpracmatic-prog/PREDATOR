@@ -33,3 +33,6 @@ bench-pareto-dense: build-morph
 	  --families ER --avg-deg-list 12 \
 	  --n-list 200,500,1000,2000 \
 	  --budgets 10,50,100,500 --reps 5 --seed 42
+
+api:
+	PYTHONPATH=src:vendor/clan_src python -m ztge.api.server --host 127.0.0.1 --port 8080

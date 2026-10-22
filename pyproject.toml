@@ -17,10 +17,12 @@ yaml = ["pyyaml>=6.0"]
 crypto = ["cryptography>=41.0"]
 dev = ["pytest>=7.0", "pyyaml>=6.0"]
 exact = ["ortools>=9.0"]
+api = ["fastapi>=0.110", "uvicorn[standard]>=0.27"]
 
 [project.scripts]
 ztge-status = "clan_subnet_detector.status_cli:main"
 clan-detect = "clan_subnet_detector.cli:main"
+ztge-api = "ztge.api.server:main"
 
 [tool.setuptools.packages.find]
 where = ["src", "vendor/clan_src"]
