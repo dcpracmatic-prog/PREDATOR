@@ -1,12 +1,9 @@
-<p align="center">
-  <img src="assets/logo.png" alt="Logo" width="200"/>
-</p>
+# ****PREDATOR**** 
+<p align="right"> <img src="assets/logo.png" alt="icon" width="150"/> </U> 
 
-[![ZTGE CI](https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine/actions/workflows/ci.yml)
+[![ZTGE CI](https://github.com/dcpracmatic-prog/predator/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/PREDATOR/actions/workflows/ci.yml)
 
-# PREDATOR
-
-**PREDATOR** (antes Zero-Trust Graph Engine, ZTGE) es un motor de optimización y análisis de grafos con interfaces HTTP y MCP.
+**es un motor de optimización y análisis de grafos con interfaces HTTP y MCP.**
 
 Combina heurísticas en C++ (`MORPH`) con un pipeline de detección, auditoría y verificación reutilizable desde Python. Los informes existentes conservan sus identificadores `ztge.audit.v1` y `ztge.envelope.v1` para mantener compatibilidad.
 
