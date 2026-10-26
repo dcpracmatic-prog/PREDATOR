@@ -196,3 +196,8 @@ docs/                # Arquitectura, packaging, reportes firmados
 ## Licencia
 
 Este proyecto se distribuye bajo los términos de la **GNU Affero General Public License v3.0 (AGPL-3.0)**. Consulte el archivo [`LICENSE`](LICENSE) para el texto completo.
+
+
+### Portable hardware validation
+
+Run `predator-hardware-profile --output hardware-profile.json` on the host that will serve agent requests. It records visible CPU/memory, MORPH availability, solution validity, measured wall time and candidate MORPH budgets for tested graph sizes. Candidate budgets are empirical for that host and calibration workload; they do not claim optimality or silently override an API request. The API body limit defaults to a resource-aware estimate (1–64 MiB when memory is detected, with a 1 MiB fallback when it is unknown); on very small-memory hosts the computed cap can be lower. These heuristics are not an RSS guarantee. Set `PREDATOR_MAX_REQUEST_BYTES` to a measured, explicit value when appropriate.

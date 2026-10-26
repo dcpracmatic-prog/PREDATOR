@@ -56,6 +56,16 @@ jobs:
           name: ztge-performance-python-${{ matrix.python-version }}
           path: /tmp/ztge-performance.json
           if-no-files-found: error
+      - name: Run portable hardware profile calibration
+        env:
+          MORPH_DUMP_BIN: ${{ github.workspace }}/vendor/morph_src/dump_morph
+        run: python -m predator.hardware_profile --sizes 256,768,1600 --budgets-ms 25,100,250 --output /tmp/predator-hardware-profile.json
+      - name: Upload hardware profile report
+        uses: actions/upload-artifact@v4
+        with:
+          name: predator-hardware-profile-python-${{ matrix.python-version }}
+          path: /tmp/predator-hardware-profile.json
+          if-no-files-found: error
       - name: Build wheel and verify clean installation
         run: |
           python -m pip wheel . --no-deps --wheel-dir /tmp/ztge-wheel

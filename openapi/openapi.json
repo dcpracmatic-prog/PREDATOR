@@ -3,7 +3,7 @@
   "info": {
     "title": "PREDATOR HTTP API",
     "version": "0.1.0",
-    "description": "Fachada HTTP B2B sobre planificador IS y auditoría firmable (ztge.audit.v1 / ztge.envelope.v1).",
+    "description": "Fachada HTTP B2B sobre planificador IS y auditoría firmable (ztge.audit.v1 / ztge.envelope.v1). Resource-aware request sizing and hardware profile.",
     "license": {
       "name": "AGPL-3.0",
       "url": "https://www.gnu.org/licenses/agpl-3.0.html"
@@ -164,7 +164,9 @@
         "required": [
           "engine",
           "version",
-          "morph"
+          "morph",
+          "resources",
+          "max_request_bytes"
         ],
         "properties": {
           "engine": {
@@ -185,6 +187,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "resources": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "max_request_bytes": {
+            "type": "integer",
+            "minimum": 1
           }
         }
       },
@@ -197,7 +207,8 @@
         "properties": {
           "n": {
             "type": "integer",
-            "minimum": 0
+            "minimum": 0,
+            "maximum": 2000000
           },
           "edges": {
             "type": "array",
@@ -209,7 +220,8 @@
                 "type": "integer",
                 "minimum": 0
               }
-            }
+            },
+            "maxItems": 10000000
           },
           "directed": {
             "type": "boolean",
@@ -243,7 +255,8 @@
           },
           "seed": {
             "type": "integer",
-            "default": 1
+            "default": 1,
+            "minimum": 0
           },
           "auto_n_threshold": {
             "type": "integer",
@@ -305,7 +318,8 @@
           },
           "seed": {
             "type": "integer",
-            "default": 1
+            "default": 1,
+            "minimum": 0
           },
           "sign": {
             "type": "boolean",

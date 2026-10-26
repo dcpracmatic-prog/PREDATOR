@@ -22,7 +22,8 @@ from clan_subnet_detector import (  # noqa: E402
 from clan_subnet_detector.audit.signing import secret_from_env  # noqa: E402
 
 from .openapi_doc import load_openapi
-from .security import is_authorized, origin_is_allowed
+from predator.hardware import system_profile
+from .security import is_authorized, max_request_bytes, origin_is_allowed
 from .validation import validate_audit_request, validate_plan_request
 
 ENGINE = "predator"
@@ -66,6 +67,8 @@ def handle_status() -> HandlerResult:
             "version": ENGINE_VERSION,
             "clan_version": clan_version,
             "morph": morph_status(),
+            "resources": system_profile(),
+            "max_request_bytes": max_request_bytes(),
             "contracts": contracts,
         },
     )
@@ -97,7 +100,7 @@ def handle_plan(body: Any) -> HandlerResult:
             "nodes": list(nodes),
             "size": len(nodes),
             "verified": verified,
-            "trace": trace[0] if trace else {},
+            "trace": {**(trace[0] if trace else {}), "budget_ms_source": req.get("budget_ms_source", "default")},
         },
     )
 
@@ -178,6 +181,11 @@ def create_app():
             "or `pip install fastapi uvicorn`."
         ) from e
 
+    try:
+        max_request_bytes()  # validate resource-limit configuration at startup
+    except ValueError as exc:
+        raise ValueError(f"invalid API request-size configuration: {exc}") from exc
+
     app = FastAPI(
         title="PREDATOR HTTP API",
         version=ENGINE_VERSION,
@@ -251,7 +259,7 @@ def create_app():
     class RequestSizeLimitASGI:
         """Bound buffered request bodies for the optional FastAPI adapter."""
 
-        def __init__(self, wrapped, max_bytes: int = 1_048_576):
+        def __init__(self, wrapped, max_bytes: int):
             self.wrapped = wrapped
             self.max_bytes = max_bytes
 
@@ -262,7 +270,10 @@ def create_app():
             length = headers.get(b"content-length")
             if length is not None:
                 try:
-                    if int(length) > self.max_bytes:
+                    if not length.isdigit():
+                        raise ValueError("Content-Length must be a non-negative decimal integer")
+                    declared_length = int(length)
+                    if declared_length > self.max_bytes:
                         response = JSONResponse({"error": "request_too_large"}, status_code=413)
                         return await response(scope, receive, send)
                 except ValueError:
@@ -294,4 +305,8 @@ def create_app():
 
             await self.wrapped(scope, replay_body, send)
 
-    return RequestSizeLimitASGI(app)
+    try:
+        request_limit = max_request_bytes()
+    except ValueError as exc:
+        raise ValueError(f"invalid API request-size configuration: {exc}") from exc
+    return RequestSizeLimitASGI(app, max_bytes=request_limit)
