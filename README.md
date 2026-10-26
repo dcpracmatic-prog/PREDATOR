@@ -4,9 +4,11 @@
 
 [![ZTGE CI](https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine/actions/workflows/ci.yml)
 
-# Zero-Trust Graph Engine (ZTGE)
+# PREDATOR
 
-Motor de optimización y análisis de grafos de baja latencia que combina heurísticas en C++ (`MORPH`) con un pipeline de detección, auditoría y verificación reutilizable desde Python.
+**PREDATOR** (antes Zero-Trust Graph Engine, ZTGE) es un motor de optimización y análisis de grafos con interfaces HTTP y MCP.
+
+Combina heurísticas en C++ (`MORPH`) con un pipeline de detección, auditoría y verificación reutilizable desde Python. Los informes existentes conservan sus identificadores `ztge.audit.v1` y `ztge.envelope.v1` para mantener compatibilidad.
 
 ## Características principales
 
@@ -20,6 +22,7 @@ Motor de optimización y análisis de grafos de baja latencia que combina heurí
 ## Requisitos
 
 - Python ≥ 3.10
+- MCP: paquete oficial de Python `mcp` (opcional, solo para el adaptador MCP)
 - Compilador C++17 (`g++`) para construir `dump_morph`
 - Opcional: `pyyaml`, `ortools` (benchmarks exactos), `cryptography` (firmas Ed25519)
 
@@ -107,21 +110,32 @@ print(paths)  # json, markdown, signed
 ## CLI
 
 ```bash
-PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --status
-PYTHONPATH=vendor/clan_src python -m clan_subnet_detector.cli --demo --method auto
+predator-status
+predator-detect --help
+predator-detect --status
 ```
 
 ---
 
 
-## API HTTP (B2B)
+## Interfaces: HTTP y MCP
+
+La API HTTP se mantiene para integraciones existentes:
 
 ```bash
-PYTHONPATH=src:vendor/clan_src python -m ztge.api.server --port 8080
+predator-api --port 8080
 # OpenAPI: http://127.0.0.1:8080/openapi.json
 ```
 
-Documentación: [docs/API.md](docs/API.md) · especificación [openapi/openapi.yaml](openapi/openapi.yaml).
+El servidor MCP usa stdio y el mismo núcleo validado (`plan` y `audit`):
+
+```bash
+predator-mcp
+```
+
+Instálalo con `python install.py` o `python -m pip install -e ".[mcp]"`. Después configura el cliente MCP para lanzar el comando `predator-mcp` desde el entorno donde instalaste PREDATOR. El detalle de la configuración depende del cliente; el servidor no solicita tokens web ni conecta bases de datos por su cuenta.
+
+Documentación HTTP: [docs/API.md](docs/API.md) · especificación [openapi/openapi.yaml](openapi/openapi.yaml).
 
 ## Benchmarks locales
 

@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Zero-Trust Graph Engine API
+  title: PREDATOR HTTP API
   version: 0.1.0
   description: |
     Fachada HTTP B2B sobre el planificador de conjuntos independientes y el

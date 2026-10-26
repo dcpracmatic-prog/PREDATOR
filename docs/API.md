@@ -1,4 +1,4 @@
-# ZTGE HTTP API
+# PREDATOR HTTP API
 
 Fachada B2B sobre el planificador y los informes firmables.
 
@@ -6,11 +6,11 @@ Fachada B2B sobre el planificador y los informes firmables.
 
 ```bash
 # stdlib (sin dependencias extra)
-PYTHONPATH=src:vendor/clan_src python -m ztge.api.server --host 127.0.0.1 --port 8080
+predator-api --host 127.0.0.1 --port 8080
 
 # opcional FastAPI
 pip install -e ".[api]"
-uvicorn ztge.api.app:create_app --factory --host 0.0.0.0 --port 8080
+uvicorn predator.api.app:create_app --factory --host 0.0.0.0 --port 8080
 ```
 
 Firma de auditorías (opcional):

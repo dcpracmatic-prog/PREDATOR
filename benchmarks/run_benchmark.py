@@ -28,7 +28,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "vendor" / "clan_src"))
 
 from clan_subnet_detector.detection.independent_set import (  # noqa: E402
     DEFAULT_AUTO_N_THRESHOLD,

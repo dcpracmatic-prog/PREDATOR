@@ -2,14 +2,8 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
-
-# Prefer vendored clan package
-_VENDOR = Path(__file__).resolve().parents[3] / "vendor" / "clan_src"
-if _VENDOR.is_dir():
-    sys.path.insert(0, str(_VENDOR))
 
 from clan_subnet_detector.audit.report import run_audit, write_report
 from clan_subnet_detector.detection.morph_adapter import morph_status
@@ -19,7 +13,7 @@ from clan_subnet_detector.graph.graph import Graph
 def status() -> Dict[str, Any]:
     return {
         "morph": morph_status(),
-        "engine": "ztge",
+        "engine": "predator",
     }
 
 

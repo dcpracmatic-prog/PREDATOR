@@ -21,7 +21,7 @@ service packaging, and what remains for the next increment.
 ### Packaging surfaces
 
 1. **Python SDK** — installable via `pip install -e .` (this `pyproject.toml`).
-   Public surface: `clan_subnet_detector` + `ztge.engine.pipeline`.
+   Public surface: `clan_subnet_detector` + `predator.engine.pipeline`.
 2. **CLI** — `clan-detect`, `ztge-status` entry points.
 3. **B2B API (next)** — thin HTTP layer over `run_audit` / `audit_graph` returning
    the same JSON audit document + optional signed envelope. Not shipped in 0.1.0.

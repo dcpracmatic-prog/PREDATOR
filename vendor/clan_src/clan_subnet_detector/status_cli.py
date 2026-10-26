@@ -12,7 +12,7 @@ def main() -> int:
     # Contracts are repository assets rather than package data in this release.
     contracts_dir = Path.cwd() / "contracts"
     result = {
-        "engine": "zero-trust-graph-engine",
+        "engine": "predator",
         "clan_version": __version__,
         "morph": morph_status(),
         "contracts": sorted(p.name for p in contracts_dir.glob("*.yaml"))
