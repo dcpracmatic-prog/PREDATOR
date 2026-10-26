@@ -124,6 +124,7 @@ La API HTTP se mantiene para integraciones existentes:
 
 ```bash
 predator-api --port 8080
+# Alias legacy: ztge-api --port 8080
 # OpenAPI: http://127.0.0.1:8080/openapi.json
 ```
 

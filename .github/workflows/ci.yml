@@ -41,7 +41,10 @@ jobs:
           MORPH_DUMP_BIN: ${{ github.workspace }}/vendor/morph_src/dump_morph
         run: |
           predator-status
+          ztge-status
           predator-detect --help
+          predator-api --help
+          ztge-api --help
       - name: Run deterministic planner performance smoke benchmark
         env:
           MORPH_DUMP_BIN: ${{ github.workspace }}/vendor/morph_src/dump_morph
@@ -62,4 +65,7 @@ jobs:
           /tmp/ztge-clean-venv/bin/python -m pip install "${wheel}[yaml,crypto]"
           cd /tmp
           /tmp/ztge-clean-venv/bin/predator-status
+          /tmp/ztge-clean-venv/bin/ztge-status
           /tmp/ztge-clean-venv/bin/predator-detect --help
+          /tmp/ztge-clean-venv/bin/predator-api --help
+          /tmp/ztge-clean-venv/bin/ztge-api --help

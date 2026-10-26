@@ -24,6 +24,7 @@ from clan_subnet_detector import (  # noqa: E402
 from clan_subnet_detector.audit.signing import secret_from_env  # noqa: E402
 
 from .openapi_doc import load_openapi
+from .security import is_authorized, origin_is_allowed
 from .validation import validate_audit_request, validate_plan_request
 
 ENGINE = "predator"
@@ -184,6 +185,53 @@ def create_app():
         version=ENGINE_VERSION,
         license_info={"name": "AGPL-3.0"},
     )
+
+    @app.middleware("http")
+    async def request_size_limit(request: Request, call_next):
+        """Reject oversized API bodies before buffering/parsing them."""
+        raw_length = request.headers.get("content-length")
+        if raw_length is not None:
+            try:
+                length = int(raw_length)
+            except ValueError:
+                return JSONResponse({"error": "invalid_content_length"}, status_code=400)
+            if length < 0:
+                return JSONResponse({"error": "invalid_content_length"}, status_code=400)
+            if length > 1_048_576:
+                return JSONResponse({"error": "request_too_large"}, status_code=413)
+
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > 1_048_576:
+                return JSONResponse({"error": "request_too_large"}, status_code=413)
+        request._body = bytes(body)
+        return await call_next(request)
+
+    @app.middleware("http")
+    async def security_middleware(request: Request, call_next):
+        origin = request.headers.get("origin")
+        if origin and not origin_is_allowed(origin):
+            return JSONResponse({"error": "origin_not_allowed"}, status_code=403)
+        if request.method != "OPTIONS" and not is_authorized(
+            request.headers, public=request.method == "GET" and request.url.path == "/health"
+        ):
+            return JSONResponse({"error": "unauthorized"}, status_code=401,
+                                headers={"WWW-Authenticate": "Bearer"})
+        response = await call_next(request)
+        if origin_is_allowed(origin):
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Vary"] = "Origin"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+        return response
+
+    @app.options("/{path:path}")
+    async def preflight(path: str, request: Request):
+        origin = request.headers.get("origin")
+        if origin and not origin_is_allowed(origin):
+            return JSONResponse({"error": "origin_not_allowed"}, status_code=403)
+        return JSONResponse({}, status_code=204)
 
     @app.get("/health")
     async def health():

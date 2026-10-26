@@ -35,3 +35,17 @@ python benchmarks/run_benchmark.py --mode pareto \
 ## Implication for the planner
 
 Optional future refinement (not required for packaging): density-aware `auto` (e.g. prefer MORPH earlier when avg degree ≳ 10). The size-only threshold remains a safe default.
+
+## Real input smoke comparison (Zachary karate club)
+
+A reproducible real-data smoke comparison is available at [`benchmarks/reports/karate_mis_20261026.json`](../benchmarks/reports/karate_mis_20261026.json), using the attributed source input [`benchmarks/data/soc-karate.mtx`](../benchmarks/data/soc-karate.mtx). It records the input SHA-256, source, environment, exact solver status, verified sets, and the fact MORPH was unavailable in the run. The cited Network Repository metadata reports 34 nodes and 78 edges. On this one run, GWMIN found a verified independent set of 20 nodes; exact CP-SAT proved optimum size 20. This is a small-graph smoke example, not a general quality/performance claim. See the input README for source citations.
+
+Re-run with:
+
+```bash
+python -m pip install -e ".[exact]"
+python benchmarks/real_graph_mis.py benchmarks/data/soc-karate.mtx \
+  --format networkrepository-mtx \
+  --source "Network Repository soc-karate (Zachary 1977)" \
+  --exact --out results/karate-mis.json
+```

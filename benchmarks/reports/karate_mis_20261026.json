@@ -1,0 +1,86 @@
+{
+  "schema": "predator.real_graph_mis.v1",
+  "created_at_utc": "2026-10-26T11:06:33.242875+00:00",
+  "source": "Network Repository: soc-karate (Zachary karate club, 1977)",
+  "input": {
+    "format": "networkrepository-mtx",
+    "file_name": "soc-karate.mtx",
+    "sha256": "b02189b419c6d6e7dd837a2248834804a84fe765e94aa52b077b81d13ad19a36",
+    "n": 34,
+    "m": 78,
+    "directed": false
+  },
+  "environment": {
+    "python": "3.13.12",
+    "platform": "Linux-6.9.12-x86_64-with-glibc2.36",
+    "method": "auto",
+    "seed": 1,
+    "budget_ms": 100
+  },
+  "measurements": [
+    {
+      "method": "gwmin",
+      "status": "ok",
+      "wall_ms": 0.15261099906638265,
+      "size": 20,
+      "verified": true,
+      "nodes": [
+        11,
+        12,
+        17,
+        21,
+        7,
+        9,
+        13,
+        19,
+        14,
+        15,
+        18,
+        20,
+        22,
+        8,
+        26,
+        28,
+        4,
+        5,
+        23,
+        24
+      ],
+      "gap_pct_to_exact": 0.0
+    },
+    {
+      "method": "morph",
+      "status": "unavailable",
+      "warning": "No dump_morph binary found. Set MORPH_DUMP_BIN or place dump_morph on PATH. Planner will fall back to GWMIN."
+    }
+  ],
+  "exact": {
+    "status": "OPTIMAL",
+    "wall_ms": 896.491371007869,
+    "size": 20,
+    "nodes": [
+      7,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      25,
+      26,
+      27,
+      28,
+      30
+    ],
+    "verified": true
+  },
+  "caveat": "Results apply only to this input graph and environment; heuristic comparison is not a general performance claim."
+}

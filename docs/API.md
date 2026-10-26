@@ -7,10 +7,22 @@ Fachada B2B sobre el planificador y los informes firmables.
 ```bash
 # stdlib (sin dependencias extra)
 predator-api --host 127.0.0.1 --port 8080
+# Alias legacy conservado para despliegues existentes
+ztge-api --host 127.0.0.1 --port 8080
 
 # opcional FastAPI
 pip install -e ".[api]"
 uvicorn predator.api.app:create_app --factory --host 0.0.0.0 --port 8080
+```
+
+### Seguridad al exponer la API
+
+Por defecto, el servidor estándar solo permite bind no-loopback si configuras `PREDATOR_API_TOKEN`. En ese caso todos los endpoints salvo `GET /health` requieren `Authorization: Bearer <token>`. Define `PREDATOR_CORS_ORIGINS` como lista separada por comas de origins exactos permitidos; sin configuración no se envía `Access-Control-Allow-Origin`. El body de petición está limitado a 1 MiB. Para despliegues ASGI/FastAPI detrás de un proxy, configura también `PREDATOR_API_TOKEN` y un allowlist CORS exacto; no publiques el servicio sin controles de red/TLS apropiados.
+
+```bash
+export PREDATOR_API_TOKEN='un-secreto-largo-desde-tu-gestor-de-secretos'
+export PREDATOR_CORS_ORIGINS='https://app.example.com'
+predator-api --host 0.0.0.0 --port 8080
 ```
 
 Firma de auditorías (opcional):
