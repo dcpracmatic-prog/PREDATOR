@@ -1,0 +1,53 @@
+# Zero-Trust Graph Engine — independent-set planner & verifier contract
+name: independent_set
+version: "0.2.0"
+language: python
+library: clan_subnet_detector.detection.independent_set
+abi: pure_python
+description: >
+  Planner (GWMIN / MORPH / auto) and pure verifier for independent sets.
+  MORPH path is external binary (dump_morph); contract binds the Python
+  surface and the verification predicate used in audit reports.
+
+functions:
+  - name: is_independent
+    description: True iff nodes form an independent set of g (no two adjacent)
+    returns: {type: bool}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+      - {name: nodes, type: list_int, direction: in}
+    ensures:
+      - {expr: "result == true implies forall u,v in nodes: u==v or not adjacent(g,u,v)"}
+
+  - name: gwmin_independent
+    description: GWMIN weighted independent-set heuristic
+    returns: {type: list_int}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+      - {name: weights, type: optional_list_float, direction: in}
+    ensures:
+      - {expr: "is_independent(g, result)"}
+
+  - name: plan_independent
+    description: >
+      Transparent planner. method in {auto, morph, gwmin}. auto uses GWMIN
+      when n < auto_n_threshold (default 1500), else MORPH if available.
+      Always records resolution in trace_out for the signed audit report.
+    returns: {type: list_int}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+      - {name: k, type: optional_int, direction: in}
+      - {name: method, type: string, direction: in, enum: [auto, morph, gwmin]}
+      - {name: budget_ms, type: int, direction: in, constraints: [1, 600000]}
+      - {name: seed, type: int, direction: in}
+      - {name: trace_out, type: optional_list, direction: out}
+    ensures:
+      - {expr: "is_independent(g, result)"}
+      - {expr: "trace_out records method_requested and method_resolved"}
+
+external_binaries:
+  - name: dump_morph
+    env: MORPH_DUMP_BIN
+    cli: ["{bin}", "{graph.gph}", "{budget_ms}", "{seed}"]
+    output: "lines: '# <size>' then 1-indexed vertices"
+    contract_ref: morph_mis

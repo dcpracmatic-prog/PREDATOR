@@ -102,3 +102,15 @@ def test_signed_envelope_verifiers_fail_closed_on_malformed_shapes_and_non_json_
 def test_crypto_verifiers_reject_malformed_keys_and_secret_types_without_crashing():
     assert hmac_verify("abcd", "00", "not-bytes") is False
     assert ed25519_verify("abcd", "00", b"not-a-public-key") is False
+
+
+def test_hmac_verifier_rejects_bad_signature_missing_key_and_unsupported_algorithm():
+    envelope = sign_report_hmac({"schema_version": "ztge.audit.v1", "value": 3}, b"right")
+    bad_signature = {**envelope, "integrity": {**envelope["integrity"], "signature": "00"}}
+    assert verify_envelope_hmac(bad_signature, b"right")[0] is False
+    assert verify_envelope_hmac(envelope, b"wrong")[0] is False
+    missing_integrity = {**envelope}; missing_integrity.pop("integrity")
+    assert verify_envelope_hmac(missing_integrity, b"right")[0] is False
+    unsupported = {**envelope, "integrity": {**envelope["integrity"], "alg": "UNKNOWN"}}
+    ok, reason = verify_envelope_hmac(unsupported, b"right")
+    assert not ok and "unexpected alg" in reason

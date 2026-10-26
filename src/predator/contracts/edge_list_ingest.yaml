@@ -1,0 +1,21 @@
+# Zero-Trust Graph Engine — edge-list ingest
+name: edge_list_ingest
+version: "0.2.0"
+language: python
+library: clan_subnet_detector.ingest.edge_list
+abi: pure_python
+description: Deterministic ingest of undirected edge lists into the Graph ADT.
+
+functions:
+  - name: load_edge_list
+    description: >
+      Load an edge list (whitespace-separated pairs, optional header comments).
+      Node ids are remapped to a dense 0..n-1 range when compact=true.
+    returns: {type: Graph}
+    parameters:
+      - {name: path, type: string, direction: in}
+      - {name: directed, type: bool, direction: in, default: false}
+      - {name: compact, type: bool, direction: in, default: true}
+    ensures:
+      - {expr: "result.n >= 0"}
+      - {expr: "result.edge_count() == number of unique undirected edges when directed=false"}

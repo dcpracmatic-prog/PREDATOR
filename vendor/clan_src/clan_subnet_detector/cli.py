@@ -110,9 +110,13 @@ def main(argv: list[str] | None = None) -> int:
     paths = write_report(report, args.out)
 
     if args.sign_hmac:
-        signed = sign_report_hmac(report, args.sign_hmac.encode("utf-8"))
+        signed = sign_report_hmac(
+            report.to_v1_dict(),
+            args.sign_hmac.encode("utf-8"),
+            producer={"organization": "dcpracmatic-prog", "service": "predator"},
+        )
         signed_path = Path(args.out) / "audit_report.signed.json"
-        signed_path.write_text(signed.to_json(), encoding="utf-8")
+        signed_path.write_text(json.dumps(signed, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         paths["signed"] = signed_path
 
     if args.json_only:

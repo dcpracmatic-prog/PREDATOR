@@ -1,0 +1,24 @@
+# Zero-Trust Graph Engine — clique detector & verifier
+name: clique
+version: "0.2.0"
+language: python
+library: clan_subnet_detector.detection.clique
+abi: pure_python
+description: Greedy clique finder and pure clique predicate for audit re-verification.
+
+functions:
+  - name: is_clique
+    description: True iff every pair in nodes is adjacent in g
+    returns: {type: bool}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+      - {name: nodes, type: list_int, direction: in}
+
+  - name: greedy_clique
+    description: Seeded greedy clique heuristic
+    returns: {type: list_int}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+      - {name: seed, type: optional_int, direction: in}
+    ensures:
+      - {expr: "is_clique(g, result)"}

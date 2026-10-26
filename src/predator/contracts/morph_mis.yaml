@@ -1,0 +1,41 @@
+# COMMONWEAVE Zero / ZTGE — MORPH maximum independent set (external binary)
+name: morph_mis
+version: "0.2.0"
+language: cpp
+library: dump_morph
+abi: cli
+description: >
+  Low-latency MIS heuristic (MORPH). Invoked via dump_morph CLI. Results are
+  always re-verified with is_independent before entering a signed audit report.
+  Does not claim optimality.
+
+binary:
+  name: dump_morph
+  env: MORPH_DUMP_BIN
+  build: "cd vendor/morph_src && make dump_morph"
+
+functions:
+  - name: morph
+    description: Run MORPH for budget_ms milliseconds with the given seed
+    returns:
+      type: object
+      fields:
+        - {name: vertices, type: list_int, description: "0-indexed vertices forming an independent set"}
+        - {name: size, type: int}
+        - {name: wall_ms, type: float64}
+        - {name: ok, type: bool}
+    cli:
+      argv: ["{bin}", "{graph.gph}", "{budget_ms}", "{seed}"]
+      stdout_format: |
+        # <size>
+        <vertex 1-indexed>
+        ...
+    parameters:
+      - {name: graph_gph, type: path, direction: in}
+      - {name: budget_ms, type: int, constraints: [1, 600000]}
+      - {name: seed, type: uint64}
+    ensures:
+      - {expr: "ok implies is_independent(g, vertices)"}
+    honesty:
+      - heuristic_only
+      - no_optimality_claim

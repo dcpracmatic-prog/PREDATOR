@@ -8,11 +8,8 @@ FastAPI application when the package is installed.
 from __future__ import annotations
 
 import json
-from pathlib import Path
+from importlib.resources import files
 from typing import Any, Dict, List, Optional, Tuple
-
-# Import paths are provided by the installed distribution (src layout).
-_ROOT = Path(__file__).resolve().parents[3]
 
 from clan_subnet_detector import (  # noqa: E402
     Graph,
@@ -30,7 +27,7 @@ from .openapi_doc import load_openapi
 from .validation import validate_audit_request, validate_plan_request
 
 ENGINE = "predator"
-ENGINE_VERSION = "0.1.0"
+ENGINE_VERSION = "0.2.0"
 
 JsonDict = Dict[str, Any]
 HandlerResult = Tuple[int, Dict[str, str], JsonDict]
@@ -61,7 +58,7 @@ def handle_health() -> HandlerResult:
 
 
 def handle_status() -> HandlerResult:
-    contracts = sorted(p.name for p in (_ROOT / "contracts").glob("*.yaml"))
+    contracts = sorted(p.name for p in files("predator").joinpath("contracts").iterdir() if p.name.endswith(".yaml"))
     return (
         200,
         _json_headers(),

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "predator"
-version = "0.1.0"
+version = "0.2.0"
 description = "PREDATOR — graph optimization and audited detection, with HTTP and MCP interfaces"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,4 +36,5 @@ where = ["src", "vendor/clan_src"]
 include = ["predator*", "clan_subnet_detector*"]
 
 [tool.setuptools.package-data]
+predator = ["contracts/*.yaml"]
 clan_subnet_detector = ["py.typed"]
