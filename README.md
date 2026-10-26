@@ -1,9 +1,12 @@
-# ****PREDATOR**** 
-<p align="right"> <img src="assets/logo.png" alt="icon" width="150"/> </U> 
+<p align="center">
+  <img src="assets/logo.png" alt="Logo" width="200"/>
+</p>
 
-[![ZTGE CI](https://github.com/dcpracmatic-prog/predator/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/PREDATOR/actions/workflows/ci.yml)
+[![ZTGE CI](https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/Zero-Trust-Graph-Engine/actions/workflows/ci.yml)
 
-**es un motor de optimización y análisis de grafos con interfaces HTTP y MCP.**
+# PREDATOR
+
+**PREDATOR** (antes Zero-Trust Graph Engine, ZTGE) es un motor de optimización y análisis de grafos con interfaces HTTP y MCP.
 
 Combina heurísticas en C++ (`MORPH`) con un pipeline de detección, auditoría y verificación reutilizable desde Python. Los informes existentes conservan sus identificadores `ztge.audit.v1` y `ztge.envelope.v1` para mantener compatibilidad.
 
@@ -198,3 +201,8 @@ Este proyecto se distribuye bajo los términos de la **GNU Affero General Public
 ### Portable hardware validation
 
 Run `predator-hardware-profile --output hardware-profile.json` on the host that will serve agent requests. It records visible CPU/memory, MORPH availability, solution validity, measured wall time and candidate MORPH budgets for tested graph sizes. Candidate budgets are empirical for that host and calibration workload; they do not claim optimality or silently override an API request. The API body limit defaults to a resource-aware estimate (1–64 MiB when memory is detected, with a 1 MiB fallback when it is unknown); on very small-memory hosts the computed cap can be lower. These heuristics are not an RSS guarantee. Set `PREDATOR_MAX_REQUEST_BYTES` to a measured, explicit value when appropriate.
+
+
+### Native streaming route for large graphs
+
+A `POST /v1/plan/native-file` streaming path is available by default: it stages request bytes to disk in bounded chunks, verifies `X-Content-SHA256`, then delegates graph parsing to native `dump_morph --json` without constructing Python edge lists or a Python `Graph`. Point `MORPH_DUMP_BIN` at a binary built from the current sources. The request body ceiling reserves space for both the staged JSON and the maximum native edge spool, then divides the remaining temporary-filesystem budget across `PREDATOR_NATIVE_MAX_UPLOADS` (default 2); it is capped at 50 GiB. `PREDATOR_NATIVE_MAX_REQUEST_BYTES` can lower this ceiling. If disk capacity cannot be queried, the fallback is 32 MiB. Native vertex/edge parser limits adapt to available memory and remain subject to MORPH's hard ceilings of 2,000,000 vertices and 10,000,000 edges; optional `PREDATOR_NATIVE_MAX_VERTICES` / `PREDATOR_NATIVE_MAX_EDGES` overrides can only lower those calculated bounds. Solver concurrency defaults to 1, timeout to 300 seconds, and output capture remains bounded. These admission heuristics are not an RSS guarantee, and accepting a 50 GiB upload does not mean MORPH can solve its graph. Reverse proxies, CDNs, and hosting platforms may impose smaller body/time limits independently; configure them and the staging filesystem for the intended size. SHA-256 checks integrity, not client identity; use bearer auth and TLS remotely.

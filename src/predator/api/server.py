@@ -12,14 +12,26 @@ Or after install::
 from __future__ import annotations
 
 import argparse
+import hashlib
+import hmac
 import json
+import os
 import sys
+import tempfile
+import time
+import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
 from urllib.parse import urlparse
 
-from predator.api.app import handle_request  # noqa: E402
-from predator.api.security import auth_configured, cors_headers, is_authorized, max_request_bytes, origin_is_allowed
+from predator.api.app import (  # noqa: E402
+    _NATIVE_UPLOAD_LIMIT,
+    _NATIVE_UPLOAD_SLOTS,
+    handle_request,
+)
+from predator.api.security import (auth_configured, cors_headers, is_authorized,
+                                   max_native_request_bytes, max_request_bytes,
+                                   native_upload_slots, origin_is_allowed)
 
 
 class PredatorHandler(BaseHTTPRequestHandler):
@@ -90,6 +102,9 @@ class PredatorHandler(BaseHTTPRequestHandler):
             return
         if not self._authorized("POST", path):
             return
+        if path == "/v1/plan/native-file":
+            self._do_native_json_file()
+            return
         # BaseHTTPRequestHandler does not decode chunked request bodies. Refuse
         # transfer encodings explicitly rather than treating them as an empty body.
         transfer_encoding = self.headers.get("Transfer-Encoding")
@@ -132,6 +147,94 @@ class PredatorHandler(BaseHTTPRequestHandler):
         status, headers, body = handle_request("POST", path, payload)
         self._write(status, headers, body)
 
+    def _do_native_json_file(self) -> None:
+        """Stream a JSON request to disk, verify SHA-256, then delegate to MORPH."""
+        try:
+            upload_slots = native_upload_slots()
+        except ValueError:
+            self._write(500, {"Content-Type": "application/json; charset=utf-8"}, {"error": "invalid_server_configuration"})
+            return
+        if upload_slots != _NATIVE_UPLOAD_LIMIT:
+            self._write(500, {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "invalid_server_configuration", "details": ["Native upload concurrency must be set before server startup; restart after changing it"]})
+            return
+        if not _NATIVE_UPLOAD_SLOTS.acquire(blocking=False):
+            self._write(503, {"Content-Type": "application/json; charset=utf-8"}, {"error": "native_upload_busy"})
+            return
+        try:
+            self._stream_native_json_file()
+        finally:
+            _NATIVE_UPLOAD_SLOTS.release()
+
+    def _stream_native_json_file(self) -> None:
+        if self.headers.get("Transfer-Encoding"):
+            self._write(400, {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "unsupported_transfer_encoding"})
+            return
+        lengths = self.headers.get_all("Content-Length", []) if hasattr(self.headers, "get_all") else [self.headers.get("Content-Length")]
+        if len(lengths) != 1 or not str(lengths[0]).isdecimal():
+            self._write(400, {"Content-Type": "application/json; charset=utf-8"}, {"error": "invalid_content_length"})
+            return
+        length = int(lengths[0])
+        try:
+            body_limit = max_native_request_bytes()
+        except ValueError as exc:
+            self._write(500, {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "invalid_server_configuration", "details": [str(exc)]})
+            return
+        if length <= 0 or length > body_limit:
+            self._write(413 if length > body_limit else 400,
+                        {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "request_too_large" if length > body_limit else "invalid_content_length"})
+            return
+        if self.headers.get_content_type() != "application/json":
+            self._write(415, {"Content-Type": "application/json; charset=utf-8"}, {"error": "content_type_must_be_application_json"})
+            return
+        expected = self.headers.get("X-Content-SHA256", "").strip().lower()
+        if len(expected) != 64 or any(c not in "0123456789abcdef" for c in expected):
+            self._write(400, {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "invalid_sha256", "details": ["X-Content-SHA256 must be 64 hexadecimal characters"]})
+            return
+        digest = hashlib.sha256()
+        received = 0
+        started = time.perf_counter()
+        try:
+            with tempfile.NamedTemporaryFile(prefix="predator-native-", suffix=".json", delete=False) as handle:
+                temp_path = handle.name
+                while received < length:
+                    chunk = self.rfile.read(min(1024 * 1024, length - received))
+                    if not chunk:
+                        raise ConnectionError("incomplete request body")
+                    received += len(chunk)
+                    digest.update(chunk)
+                    handle.write(chunk)
+                handle.flush()
+                os.fsync(handle.fileno())
+                os.fchmod(handle.fileno(), 0o400)
+            upload_hash_verify_s = time.perf_counter() - started
+            actual = digest.hexdigest()
+            if not hmac.compare_digest(actual, expected):
+                self._write(400, {"Content-Type": "application/json; charset=utf-8"},
+                            {"error": "sha256_mismatch", "expected": expected, "actual": actual})
+                return
+            from predator.api.app import native_json_plan_file
+            status, headers, body = native_json_plan_file(temp_path, input_sha256=actual, byte_length=received)
+            body.setdefault("trace", {})
+            if isinstance(body["trace"], dict):
+                body["trace"].update({"upload_hash_verify_s": round(upload_hash_verify_s, 6),
+                                      "request_process_s": round(time.perf_counter() - started, 6),
+                                      "streamed_bytes": received})
+            self._write(status, headers, body)
+        except (OSError, ConnectionError) as exc:
+            self._write(400, {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "request_body_read_failed", "details": [str(exc)]})
+        finally:
+            if "temp_path" in locals():
+                try:
+                    os.unlink(temp_path)
+                except OSError:
+                    pass
+
 
 class _InvalidJSON:
     pass
@@ -143,7 +246,9 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--port", type=int, default=8080)
     args = p.parse_args(argv)
     try:
-        max_request_bytes()  # fail fast on an invalid operator override
+        max_request_bytes()  # fail fast on invalid operator overrides
+        max_native_request_bytes()
+        native_upload_slots()
     except ValueError as exc:
         p.error(str(exc))
     try:

@@ -57,6 +57,37 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/plan/native-file:
+    post:
+      operationId: nativePlanFile
+      summary: Stream raw JSON to the native MORPH parser
+      description: Available by default; stages the upload and a bounded native edge spool, with a disk-derived cap up to 50 GiB. The 50 GiB value is a transport ceiling, not a claim that MORPH can solve a graph of that size. Requires X-Content-SHA256 over the exact request body and a configured dump_morph built with --json support.
+      parameters:
+        - in: header
+          name: X-Content-SHA256
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{64}$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanRequest"
+      responses:
+        "200":
+          description: Native MORPH solution with independent-set verification trace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanResponse"
+        "400":
+          description: Invalid JSON, hash mismatch, or graph rejected by native parser
+        "413":
+          description: Request exceeds the available staging/spool disk budget
+        "503":
+          description: Native solver unavailable or concurrency limit reached
   /v1/audit:
     post:
       operationId: auditGraph
