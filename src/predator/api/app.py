@@ -5,8 +5,6 @@ Works without FastAPI: ``handle_request(method, path, body)`` returns
 FastAPI application when the package is installed.
 """
 
-from __future__ import annotations
-
 import json
 from importlib.resources import files
 from typing import Any, Dict, List, Optional, Tuple
@@ -187,28 +185,6 @@ def create_app():
     )
 
     @app.middleware("http")
-    async def request_size_limit(request: Request, call_next):
-        """Reject oversized API bodies before buffering/parsing them."""
-        raw_length = request.headers.get("content-length")
-        if raw_length is not None:
-            try:
-                length = int(raw_length)
-            except ValueError:
-                return JSONResponse({"error": "invalid_content_length"}, status_code=400)
-            if length < 0:
-                return JSONResponse({"error": "invalid_content_length"}, status_code=400)
-            if length > 1_048_576:
-                return JSONResponse({"error": "request_too_large"}, status_code=413)
-
-        body = bytearray()
-        async for chunk in request.stream():
-            body.extend(chunk)
-            if len(body) > 1_048_576:
-                return JSONResponse({"error": "request_too_large"}, status_code=413)
-        request._body = bytes(body)
-        return await call_next(request)
-
-    @app.middleware("http")
     async def security_middleware(request: Request, call_next):
         origin = request.headers.get("origin")
         if origin and not origin_is_allowed(origin):
@@ -272,4 +248,50 @@ def create_app():
         code, _, body_out = handle_audit(body)
         return JSONResponse(body_out, status_code=code)
 
-    return app
+    class RequestSizeLimitASGI:
+        """Bound buffered request bodies for the optional FastAPI adapter."""
+
+        def __init__(self, wrapped, max_bytes: int = 1_048_576):
+            self.wrapped = wrapped
+            self.max_bytes = max_bytes
+
+        async def __call__(self, scope, receive, send):
+            if scope["type"] != "http":
+                return await self.wrapped(scope, receive, send)
+            headers = {key.lower(): value for key, value in scope.get("headers", [])}
+            length = headers.get(b"content-length")
+            if length is not None:
+                try:
+                    if int(length) > self.max_bytes:
+                        response = JSONResponse({"error": "request_too_large"}, status_code=413)
+                        return await response(scope, receive, send)
+                except ValueError:
+                    response = JSONResponse({"error": "invalid_content_length"}, status_code=400)
+                    return await response(scope, receive, send)
+            chunks = []
+            total = 0
+            while True:
+                message = await receive()
+                if message["type"] == "http.disconnect":
+                    return
+                chunk = message.get("body", b"")
+                total += len(chunk)
+                if total > self.max_bytes:
+                    response = JSONResponse({"error": "request_too_large"}, status_code=413)
+                    return await response(scope, receive, send)
+                chunks.append(chunk)
+                if not message.get("more_body", False):
+                    break
+            body = b"".join(chunks)
+            sent = False
+
+            async def replay_body():
+                nonlocal sent
+                if not sent:
+                    sent = True
+                    return {"type": "http.request", "body": body, "more_body": False}
+                return {"type": "http.request", "body": b"", "more_body": False}
+
+            await self.wrapped(scope, replay_body, send)
+
+    return RequestSizeLimitASGI(app)

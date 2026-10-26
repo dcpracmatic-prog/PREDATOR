@@ -30,6 +30,30 @@ def test_server_rejects_non_loopback_without_bearer_token(monkeypatch):
         main(["--host", "0.0.0.0", "--port", "0"])
 
 
+def test_fastapi_origin_auth_and_body_size_limits(monkeypatch):
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+    from predator.api.app import create_app
+
+    monkeypatch.setenv("PREDATOR_CORS_ORIGINS", "https://trusted.example")
+    monkeypatch.setenv("PREDATOR_API_TOKEN", "integration-secret")
+    with TestClient(create_app()) as client:
+        denied_origin = client.post("/v1/plan", headers={"Origin": "https://evil.example", "Authorization": "Bearer integration-secret"}, json={})
+        assert denied_origin.status_code == 403
+
+        unauthorized = client.post("/v1/plan", headers={"Origin": "https://trusted.example"}, json={})
+        assert unauthorized.status_code == 401
+
+        accepted = client.post("/v1/plan", headers={"Origin": "https://trusted.example", "Authorization": "Bearer integration-secret"}, json={
+            "graph": {"n": 3, "edges": [[0, 1], [1, 2]]}, "method": "gwmin"
+        })
+        assert accepted.status_code == 200
+        assert accepted.headers["access-control-allow-origin"] == "https://trusted.example"
+
+        oversized = client.post("/v1/plan", headers={"Authorization": "Bearer integration-secret"}, content=b"x" * (1_048_576 + 1))
+        assert oversized.status_code == 413
+
+
 def test_http_handler_authentication_gate_without_network(monkeypatch):
     from types import SimpleNamespace
     from unittest.mock import Mock
@@ -43,22 +67,3 @@ def test_http_handler_authentication_gate_without_network(monkeypatch):
     fake.headers = {"Authorization": "Bearer integration-secret"}
     assert PredatorHandler._authorized(fake, "POST", "/v1/plan") is True
     fake._write.assert_not_called()
-
-
-def test_fastapi_adapter_auth_cors_and_request_size(monkeypatch):
-    fastapi = pytest.importorskip("fastapi")
-    from fastapi.testclient import TestClient
-    from predator.api.app import create_app
-
-    monkeypatch.setenv("PREDATOR_API_TOKEN", "asgi-secret")
-    monkeypatch.setenv("PREDATOR_CORS_ORIGINS", "https://ui.example")
-    client = TestClient(create_app())
-    assert client.get("/health").status_code == 200
-    assert client.get("/v1/status").status_code == 401
-    good = client.get("/v1/status", headers={"Authorization": "Bearer asgi-secret", "Origin": "https://ui.example"})
-    assert good.status_code == 200
-    assert good.headers.get("Access-Control-Allow-Origin") == "https://ui.example"
-    bad = client.get("/v1/status", headers={"Authorization": "Bearer asgi-secret", "Origin": "https://bad.example"})
-    assert bad.status_code == 403
-    oversized = client.post("/v1/plan", content=b" " * (1_048_577), headers={"Authorization": "Bearer asgi-secret"})
-    assert oversized.status_code == 413
