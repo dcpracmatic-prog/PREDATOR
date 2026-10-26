@@ -11,7 +11,7 @@ morph_v15: morph_v15.cpp
 morph_qoblib_solver: morph_qoblib_solver.cpp
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-dump_morph: dump_morph.cpp morph_qoblib_solver.cpp
+dump_morph: dump_morph.cpp morph_qoblib_solver.cpp json_graph_stream.hpp
 	$(CXX) $(CXXFLAGS) -o $@ dump_morph.cpp
 
 clean:

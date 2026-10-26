@@ -70,3 +70,8 @@ MORPH is currently best described as a low-latency combinatorial heuristic for M
 MORPH is licensed under the GNU General Public License v3.0.
 
 See [`LICENSE`](LICENSE) for the full license text.
+
+
+## PREDATOR JSON input
+
+The `dump_morph` front end additionally accepts `dump_morph --json <request.json>` for the PREDATOR native-file API. It streams JSON tokens, stages integer edge pairs in a temporary spool, validates endpoints and duplicate/self-loop constraints, then constructs MORPH's CSR graph. `PREDATOR_NATIVE_MAX_VERTICES` and `PREDATOR_NATIVE_MAX_EDGES` can only lower the built-in safety ceilings. This interface is not part of the older `.gph <budget_ms> <seed>` CLI.
