@@ -57,6 +57,35 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+  /v1/plan/native-file:
+    post:
+      operationId: nativePlanFile
+      summary: Stream raw JSON to the native MORPH parser
+      description: Available by default; uses a staging-disk-derived cap up to 50 GiB. Requires X-Content-SHA256 over the exact request body and a configured native solver.
+      parameters:
+        - in: header
+          name: X-Content-SHA256
+          required: true
+          schema:
+            type: string
+            pattern: "^[0-9a-fA-F]{64}$"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlanRequest"
+      responses:
+        "200":
+          description: Native MORPH solution with independent-set verification trace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlanResponse"
+        "400":
+          description: Invalid JSON, hash mismatch, or graph rejected by native parser
+        "503":
+          description: Native route disabled, solver unavailable, or concurrency limit reached
   /v1/audit:
     post:
       operationId: auditGraph
@@ -93,7 +122,7 @@ components:
           type: string
     Status:
       type: object
-      required: [engine, version, morph]
+      required: [engine, version, morph, resources, max_request_bytes]
       properties:
         engine:
           type: string
@@ -104,6 +133,12 @@ components:
         morph:
           type: object
           additionalProperties: true
+        resources:
+          type: object
+          additionalProperties: true
+        max_request_bytes:
+          type: integer
+          minimum: 1
         contracts:
           type: array
           items:
@@ -115,9 +150,11 @@ components:
         n:
           type: integer
           minimum: 0
-          description: Number of nodes (0 .. n-1)
+          maximum: 2000000
+          description: Number of nodes (0 .. n-1), further bounded by available host memory
         edges:
           type: array
+          maxItems: 10000000
           items:
             type: array
             minItems: 2
@@ -146,6 +183,7 @@ components:
           default: 100
         seed:
           type: integer
+          minimum: 0
           default: 1
         auto_n_threshold:
           type: integer
@@ -183,6 +221,7 @@ components:
           default: 100
         seed:
           type: integer
+          minimum: 0
           default: 1
         sign:
           type: boolean
