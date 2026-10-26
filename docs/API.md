@@ -17,7 +17,7 @@ uvicorn predator.api.app:create_app --factory --host 0.0.0.0 --port 8080
 
 ### Seguridad al exponer la API
 
-Por defecto, el servidor estándar solo permite bind no-loopback si configuras `PREDATOR_API_TOKEN`. En ese caso todos los endpoints salvo `GET /health` requieren `Authorization: Bearer <token>`. Define `PREDATOR_CORS_ORIGINS` como lista separada por comas de origins exactos permitidos; sin configuración no se envía `Access-Control-Allow-Origin`. El body de petición está limitado a 1 MiB. Para despliegues ASGI/FastAPI detrás de un proxy, configura también `PREDATOR_API_TOKEN` y un allowlist CORS exacto; no publiques el servicio sin controles de red/TLS apropiados.
+El servidor estándar solo permite bind no-loopback cuando configuras `PREDATOR_API_TOKEN`. En ese caso todos los endpoints salvo `GET /health` requieren `Authorization: Bearer <token>`. Define `PREDATOR_CORS_ORIGINS` como lista separada por comas de origins exactos permitidos; origins no permitidos se rechazan y sin allowlist no se habilita CORS. Los adaptadores stdlib y FastAPI limitan el cuerpo de cada petición a 1 MiB. En ASGI configura `PREDATOR_API_HOST` al host de bind para que la fábrica también rechace hosts no-loopback sin token; el despliegue ASGI debe configurar TLS/red perimetral en el servidor o proxy.
 
 ```bash
 export PREDATOR_API_TOKEN='un-secreto-largo-desde-tu-gestor-de-secretos'

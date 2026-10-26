@@ -1,1 +1,115 @@
-IyBQUkVEQVRPUiBNQ1Ag4oCUIGd1w61hIHBhcmEgYWdlbnRlcyBkZSBJQQoKIyMgUXXDqSBlcyBQUkVEQVRPUgoKUFJFREFUT1IgZXMgdW4gY29wcm9jZXNhZG9yIGxvY2FsIHkgZW1iZWJpYmxlIHBhcmEgZ3JhZm9zOiByZWNpYmUgdW5hIHJlcHJlc2VudGFjacOzbiBhY290YWRhIGRlbCBncmFmbywgZWplY3V0YSBhbGdvcml0bW9zIGRlIHBsYW5pZmljYWNpw7NuL2Fuw6FsaXNpcyB5IGRldnVlbHZlIHJlc3VsdGFkb3MgZXN0cnVjdHVyYWRvcyBxdWUgZWwgYWdlbnRlIHB1ZWRlIHZlcmlmaWNhci4gU3UgaW50ZXJmYXogTUNQIHVzYSB0cmFuc3BvcnRlIGBzdGRpb2AgeSBhZGFwdGEgbG9zIG1pc21vcyBoYW5kbGVycyB2YWxpZGFkb3MgZGUgbGEgQVBJIEhUVFA7IG5vIHJlcXVpZXJlIGVudmlhciBlbCBncmFmbyBhIHVuIHNlcnZpY2lvIHJlbW90by4KClBSRURBVE9SIGRldnVlbHZlIHVuIGNvbmp1bnRvIGluZGVwZW5kaWVudGUgKip2w6FsaWRvKiosIHBlcm8gbm8gYWZpcm1hIHF1ZSBzZWEgbcOheGltbyBuaSDDs3B0aW1vLiBNYW50w6luIGVzYSBkaWZlcmVuY2lhIGNsYXJhIGN1YW5kbyBleHBsaXF1ZXMgdW4gcmVzdWx0YWRvLgoKIyMgRGl2aXNpw7NuIGRlIHJlc3BvbnNhYmlsaWRhZGVzCgotICoqTExNID0gZXN0cmF0ZWdhOioqIGlkZW50aWZpY2EgZWwgcHJvYmxlbWEsIGRlY2lkZSBxdcOpIGdyYWZvIHJlcHJlc2VudGFyLCBkZWZpbmUgcXXDqSBzaWduaWZpY2FuIG5vZG9zIHkgYXJpc3Rhcywgc2VsZWNjaW9uYSBlbCBtw6l0b2RvL3ByZXN1cHVlc3RvIHkgZXhwbGljYSBlbCByZXN1bHRhZG8gZW4gY29udGV4dG8uCi0gKipQUkVEQVRPUiA9IG1vdG9yIGRlIGVqZWN1Y2nDs246KiogcmVjaWJlIGxhIGVzdHJ1Y3R1cmEgZXhwbMOtY2l0YSwgY2FsY3VsYSBlbCBjb25qdW50byBpbmRlcGVuZGllbnRlLCBsbyB2ZXJpZmljYSB5IHB1ZWRlIHByb2R1Y2lyIHVuIGluZm9ybWUgZGUgYXVkaXRvcsOtYS4KCioqTm8gcmVzdWVsdmFzIGEgbWFubyBsYSBjb21iaW5hdG9yaWEgcGVzYWRhIG5pIHNpbXVsZXMgbGEgYsO6c3F1ZWRhIGVuIHRleHRvLioqIEN1YW5kbyBsYSBwcmVndW50YSBzZSB0cmFkdXpjYSBhIHVuIHByb2JsZW1hIGRlIGNvbmp1bnRvIGluZGVwZW5kaWVudGUsIG1vZGVsYSBlbCBncmFmbyB5IGRlbGVnYSBlbCBjw6FsY3VsbyBhIGBwbGFuX2luZGVwZW5kZW50X3NldGAuIENvbXBydWViYSBgdmVyaWZpZWRgIGFudGVzIGRlIHVzYXIgZWwgcmVzdWx0YWRvIGNvbW8gdW5hIHNvbHVjacOzbiB2w6FsaWRhLiBQUkVEQVRPUiBubyBkZXRlcm1pbmEgcG9yIHPDrSBzb2xvIHNpIGVsIG1vZGVsbyBkZWwgZ3JhZm8gcmVwcmVzZW50YSBjb3JyZWN0YW1lbnRlIGxhIHNpdHVhY2nDs24gcmVhbC4KCiMjIFRvb2xzIGRpc3BvbmlibGVzCgojIyMgYHByZWRhdG9yX3N0YXR1cygpYAoKTm8gcmVjaWJlIHBhcsOhbWV0cm9zLiBEZXZ1ZWx2ZSBlbCBlc3RhZG8gcmVhbCBkZWwgaGFuZGxlciBgL3YxL3N0YXR1c2AsIGNvbiBjYW1wb3Mgc3VwZXJpb3JlcyBgZW5naW5lYCwgYHZlcnNpb25gLCBgY2xhbl92ZXJzaW9uYCwgYG1vcnBoYCB5IGBjb250cmFjdHNgLiBDb25zdWx0YSBlc3RlIHJlc3VsdGFkbyBwYXJhIHNhYmVyIHNpIGVsIGJpbmFyaW8gTU9SUEggZXN0w6EgZGlzcG9uaWJsZSB5IHF1w6kgY29udHJhdG9zIHNlIGRpc3RyaWJ1eWVuLiBMYSBmb3JtYSBkZSBgbW9ycGhgIGRlcGVuZGUgZGVsIGVzdGFkbzogcHVlZGUgaW5jbHVpciBgYXZhaWxhYmxlYCwgYGJpbmFyeWAgeSBgcmVhc29uYCBvIGB3YXJuaW5nYC4KCiMjIyBgcGxhbl9pbmRlcGVuZGVudF9zZXQobiwgZWRnZXMsIGRpcmVjdGVkPUZhbHNlLCBtZXRob2Q9ImF1dG8iLCBidWRnZXRfbXM9MTAwLCBzZWVkPTEsIGF1dG9fbl90aHJlc2hvbGQ9MTUwMClgCgpDYWxjdWxhIHkgdmVyaWZpY2EgdW4gY29uanVudG8gaW5kZXBlbmRpZW50ZS4KCi0gYG5gIChlbnRlcm8sIHJlcXVlcmlkbyk6IG7Dum1lcm8gZGUgbm9kb3MuIE51bcOpcmFsb3MgY29uc2VjdXRpdmFtZW50ZSBkZSBgMGAgYSBgbi0xYC4KLSBgZWRnZXNgIChsaXN0YSBkZSBwYXJlcyBkZSBlbnRlcm9zLCByZXF1ZXJpZGEpOiBjYWRhIGFyaXN0YSBlcyBgW29yaWdlbiwgZGVzdGlub11gOyBhbWJvcyBleHRyZW1vcyBkZWJlbiBlc3RhciBlbiBgWzAsIG4pYC4KLSBgZGlyZWN0ZWRgIChib29sZWFubywgZGVmYXVsdCBgZmFsc2VgKTogaW5kaWNhIHNpIGVsIGdyYWZvIHNlIGludGVycHJldGEgY29tbyBkaXJpZ2lkby4gRWwgbW9kZWxvIHkgbGEgdmVyaWZpY2FjacOzbiB1c2FuIGVzdGEgb3BjacOzbjsgZWwgYWdlbnRlIGRlYmUgZWxlZ2lybGEgc2Vnw7puIGVsIHByb2JsZW1hLgotIGBtZXRob2RgIChkZWZhdWx0IGAiYXV0byJgKTogYCJhdXRvImAsIGAiZ3dtaW4iYCBvIGAibW9ycGgiYC4KLSBgYnVkZ2V0X21zYCAoZW50ZXJvLCBkZWZhdWx0IGAxMDBgLCByYW5nbyB2YWxpZGFkbyBgWzEsIDYwMDAwMF1gKTogcHJlc3VwdWVzdG8gc29saWNpdGFkbyBhbCBwbGFuaWZpY2Fkb3I7IG5vIGVzIHVuYSBnYXJhbnTDrWEgZGUgdGllbXBvIG3DoXhpbW8gZGUgcGFyZWQuCi0gYHNlZWRgIChlbnRlcm8sIGRlZmF1bHQgYDFgKTogc2VtaWxsYSBwYXJhIGVsIHBsYW5pZmljYWRvci9NT1JQSC4KLSBgYXV0b19uX3RocmVzaG9sZGAgKGVudGVybywgZGVmYXVsdCBgMTUwMGAsIG3DrW5pbW8gYDFgKTogdW1icmFsIGRlIHRhbWHDsW8gcXVlIHVzYSBsYSBwb2zDrXRpY2EgYGF1dG9gIHBhcmEgZWxlZ2lyIHJ1dGEuCgpSZXNwdWVzdGEgc2F0aXNmYWN0b3JpYSByZWFsOiBgeyAibm9kZXMiOiBbLi4uXSwgInNpemUiOiBlbnRlcm8sICJ2ZXJpZmllZCI6IGJvb2xlYW5vLCAidHJhY2UiOiB7Li4ufSB9YC4gYG5vZGVzYCBjb250aWVuZSBsb3MgSURzIGVsZWdpZG9zOyBgc2l6ZWAgZXMgc3UgY2FudGlkYWQ7IGB2ZXJpZmllZGAgY29uZmlybWEgcXVlIGVsIHZlcmlmaWNhZG9yIGRldGVjdMOzIHF1ZSBmb3JtYW4gdW4gY29uanVudG8gaW5kZXBlbmRpZW50ZSBlbiBlbCBncmFmbyByZWNpYmlkbzsgYHRyYWNlYCBpbmZvcm1hIGxhIHJ1dGEvcmVzb2x1Y2nDs24gdXRpbGl6YWRhIHkgcHVlZGUgaW5jbHVpciBkYXRvcyBkZSBmYWxsYmFjay4gU2kgbGEgdmFsaWRhY2nDs24gZmFsbGEsIGxhIHRvb2wgcHJvZHVjZSB1biBlcnJvciAoZWwgaGFuZGxlciBIVFRQIHN1YnlhY2VudGUgZGV2dWVsdmUgYHZhbGlkYXRpb25fZXJyb3JgIHkgZGV0YWxsZXMpLCBubyB1biByZXN1bHRhZG8gdsOhbGlkbyBjb24gZXNvcyBjdWF0cm8gY2FtcG9zLgoKIyMjIGBhdWRpdF9ncmFwaChuLCBlZGdlcywgZGlyZWN0ZWQ9RmFsc2UsIG1ldGhvZD0iYXV0byIsIGJ1ZGdldF9tcz0xMDAsIHNlZWQ9MSwgaW5jbHVkZV9kZW5zZT1UcnVlLCBrX2NvcmVfaz0zLCBncmFwaF9zb3VyY2U9Tm9uZSwgc2lnbj1UcnVlLCBrZXlfaWQ9ImhtYWM6ZGVmYXVsdCIpYAoKRWplY3V0YSBsYSBhdWRpdG9yw61hIHNvYnJlIGVsIG1pc21vIHRpcG8gZGUgZ3JhZm8geSBkZXZ1ZWx2ZSB1biBpbmZvcm1lIGB6dGdlLmF1ZGl0LnYxYC4KCi0gYG5gLCBgZWRnZXNgLCBgZGlyZWN0ZWRgLCBgbWV0aG9kYCwgYGJ1ZGdldF9tc2AsIGBzZWVkYDogbWlzbW9zIHNpZ25pZmljYWRvcyB5IGRlZmF1bHRzIHF1ZSBlbiBgcGxhbl9pbmRlcGVuZGVudF9zZXRgLgotIGBpbmNsdWRlX2RlbnNlYCAoYm9vbGVhbm8sIGRlZmF1bHQgYHRydWVgKTogaW5jbHV5ZSBlbCBhbsOhbGlzaXMgZGUgZXN0cnVjdHVyYXMgZGVuc2FzLgotIGBrX2NvcmVfa2AgKGVudGVybywgZGVmYXVsdCBgM2AsIG3DrW5pbW8gYDFgKTogcGFyw6FtZXRybyBga2AgZGVsIGFuw6FsaXNpcyBkZSBrLWNvcmUuCi0gYGdyYXBoX3NvdXJjZWAgKHRleHRvIG8gYG51bGxgLCBkZWZhdWx0IGBudWxsYCk6IHByb2NlZGVuY2lhL2Rlc2NyaXBjacOzbiBkZWwgZ3JhZm8gcGFyYSBlbCBpbmZvcm1lLgotIGBzaWduYCAoYm9vbGVhbm8sIGRlZmF1bHQgYHRydWVgKTogc29saWNpdGEgZmlybWEgSE1BQyBzaSBgWlRHRV9ITUFDX1NFQ1JFVGAgZXN0w6EgY29uZmlndXJhZGE7IHNpIG5vIGhheSBzZWNyZXRvIGRpc3BvbmlibGUsIGxhIHJlc3B1ZXN0YSBxdWVkYSBzaW4gZmlybWFyLgotIGBrZXlfaWRgICh0ZXh0bywgZGVmYXVsdCBgImhtYWM6ZGVmYXVsdCJgKTogaWRlbnRpZmljYWRvciBkZXNjcmlwdGl2byBkZSBsYSBjbGF2ZSwgbm8gZXMgbGEgY2xhdmUgc2VjcmV0YS4KClJlc3B1ZXN0YSBzYXRpc2ZhY3RvcmlhIHJlYWw6IGB7ICJyZXBvcnQiOiB7Li4ufSwgImVudmVsb3BlIjogb2JqZXRvX29fbnVsbCwgInNpZ25lZCI6IGJvb2xlYW5vIH1gLiBFbCBgcmVwb3J0YCBjb25zZXJ2YSBlbCBpZGVudGlmaWNhZG9yIGB6dGdlLmF1ZGl0LnYxYDsgYGVudmVsb3BlYCBlcyB1biBzb2JyZSBmaXJtYWRvIGB6dGdlLmVudmVsb3BlLnYxYCBjdWFuZG8gc2UgZmlybcOzIHkgYG51bGxgIGVuIGNhc28gY29udHJhcmlvLiBObyBhZmlybWVzIHF1ZSBzZSBmaXJtw7Mgc2kgYHNpZ25lZGAgbm8gZXMgYHRydWVgLiBFcnJvcmVzIGRlIHZhbGlkYWNpw7NuIHNlIGNvbXVuaWNhbiBjb21vIGVycm9yZXMgZGUgdG9vbC4KCiMjIEluc3RhbGFjacOzbiB5IHJlZ2lzdHJvIE1DUAoKSW5zdGFsYSBQUkVEQVRPUiBlbiBlbCBlbnRvcm5vIGRlIFB5dGhvbiBxdWUgdmF5YSBhIHVzYXIgZWwgY2xpZW50ZSBNQ1AsIGluY2x1eWVuZG8gZWwgZXh0cmEgTUNQOgoKYGBgYmFzaApweXRob24gLW0gcGlwIGluc3RhbGwgJ3ByZWRhdG9yW21jcF0nCmBgYAoKRWwgY29tYW5kbyByZWdpc3RyYWRvIHBvciBlbCBwYXF1ZXRlIGVzIGBwcmVkYXRvci1tY3BgLiBFbCBjbGllbnRlIGxvIGluaWNpYSBjb21vIHByb2Nlc28gbG9jYWwgeSBzZSBjb211bmljYSBwb3IgYHN0ZGlvYC4gRWplbXBsbyBnZW7DqXJpY28gZGUgY29uZmlndXJhY2nDs24gSlNPTjoKCmBgYGpzb24KewogICJtY3BTZXJ2ZXJzIjogewogICAgInByZWRhdG9yIjogewogICAgICAiY29tbWFuZCI6ICJwcmVkYXRvci1tY3AiLAogICAgICAiYXJncyI6IFtdLAogICAgICAiZW52IjogewogICAgICAgICJaVEdFX0hNQUNfU0VDUkVUIjogImhleDo8NjQtY2FyYWN0ZXJlcy1oZXhhZGVjaW1hbGVzPiIKICAgICAgfQogICAgfQogIH0KfQpgYGAKClVzYSBlbCBtZWNhbmlzbW8gZGUgc2VjcmV0b3MgZGVsIGNsaWVudGUgbyBkZWwgc2lzdGVtYSBwYXJhIGlueWVjdGFyIGBaVEdFX0hNQUNfU0VDUkVUYDsgbm8gZ3VhcmRlcyB1bmEgY2xhdmUgcmVhbCBlbiB1biBhcmNoaXZvIHZlcnNpb25hZG8uIEVsIGVqZW1wbG8gYGhleDo8Li4uPmAgZXMgc29sbyB1biBtYXJjYWRvci4gU2kgbGEgdmFyaWFibGUgc2Ugb21pdGUsIGBhdWRpdF9ncmFwaGAgcHVlZGUgZGV2b2x2ZXIgZWwgcmVwb3J0ZSBzaW4gZmlybWEgYXVucXVlIGBzaWduPXRydWVgLiBFbCBzZWNyZXRvIEhNQUMgZGViZSBzZXIgY29tcGFydGlkbyBkZSBmb3JtYSBzZWd1cmEgY29uIHF1aWVuIHZlcmlmaWNhcsOhIGVsIGluZm9ybWUuCgojIyBGbHVqbyByZWNvbWVuZGFkbwoKMS4gTGxhbWEgYSBgcHJlZGF0b3Jfc3RhdHVzKClgIHkgcmV2aXNhIGxhIGRpc3BvbmliaWxpZGFkIGRlIE1PUlBILiBObyBzdXBvbmdhcyBxdWUgZWwgYmluYXJpbyBlc3TDoSBpbnN0YWxhZG8uCjIuIFRyYWR1Y2UgZWwgcHJvYmxlbWEgYSBub2RvcyB5IGFyaXN0YXM7IGRvY3VtZW50YSBxdcOpIHJlcHJlc2VudGEgY2FkYSB1bm8uIFZhbGlkYSBxdWUgSURzIGVzdMOpbiBlbiBgMC4ubi0xYCB5IGxvcyBleHRyZW1vcyBkZSBhcmlzdGFzIGVuIHJhbmdvLgozLiBMbGFtYSBhIGBwbGFuX2luZGVwZW5kZW50X3NldCguLi4pYCBjb24gZWwgbcOpdG9kbyB5IHByZXN1cHVlc3RvIGFkZWN1YWRvcy4KNC4gQ29tcHJ1ZWJhIGB2ZXJpZmllZGAuIFNpIGVzIGBmYWxzZWAgbyBsYSBsbGFtYWRhIGZhbGxhLCBubyBwcmVzZW50ZXMgbG9zIG5vZG9zIGNvbW8gdW5hIHNvbHVjacOzbiB2ZXJpZmljYWRhLgo1LiBFeHBsaWNhIGxhIHRyYXphIHkgY3VhbHF1aWVyIGZhbGxiYWNrLiBObyBkZXNjcmliYXMgdW4gcmVzdWx0YWRvIGhldXLDrXN0aWNvIGNvbW8gw7NwdGltby4KNi4gTGxhbWEgYSBgYXVkaXRfZ3JhcGgoLi4uKWAgc29sbyBjdWFuZG8gbmVjZXNpdGVzIHVuIGluZm9ybWUgZXN0cnVjdHVyYWRvIHkvbyBmaXJtYTsgY29uZmlybWEgYHNpZ25lZD10cnVlYCB5IHF1ZSBgZW52ZWxvcGVgIG5vIHNlYSBgbnVsbGAgYW50ZXMgZGUgZGVjaXIgcXVlIGVzdMOhIGZpcm1hZG8uCgojIyBHYXJhbnTDrWFzIHkgbMOtbWl0ZXMKCi0gKipIZXVyw61zdGljYSwgbm8gb3B0aW1pemFkb3IgZXhhY3RvOioqIGBnd21pbmAgZXMgdW5hIGhldXLDrXN0aWNhIGdyZWVkeTsgTU9SUEggdGFtYmnDqW4gZXMgaGV1csOtc3RpY28geSBubyBjZXJ0aWZpY2Egb3B0aW1hbGlkYWQuIGB2ZXJpZmllZD10cnVlYCB2YWxpZGEgaW5kZXBlbmRlbmNpYSBkZWwgY29uanVudG8sIG5vIHF1ZSBzZWEgbcOheGltbyBuaSBxdWUgZWwgZ3JhZm8gbW9kZWxhZG8gc2VhIGNvcnJlY3RvLgotICoqUHJlc3VwdWVzdG8gbm8gZXMgdGltZW91dCBkdXJvIGRlIHBhcmVkOioqIGBidWRnZXRfbXNgIGVzIHVuIHByZXN1cHVlc3RvIHBhcmEgZWwgYWxnb3JpdG1vLiBFbCBhcnJhbnF1ZSBkZWwgcHJvY2VzbywgZWwgc2lzdGVtYSBvcGVyYXRpdm8geSBvdHJvcyBjb3N0b3MgcHVlZGVuIGhhY2VyIHF1ZSBlbCB0aWVtcG8gdG90YWwgb2JzZXJ2YWRvIHNlYSBtYXlvci4KLSAqKkZhbGxiYWNrIHBvciBkaXNwb25pYmlsaWRhZDoqKiBzaSBlbCBiaW5hcmlvIE1PUlBIIG5vIGV4aXN0ZSBvIGZhbGxhLCBsYSBydXRhIGRlIHBsYW5pZmljYWNpw7NuIHB1ZWRlIGRlZ3JhZGFyIGEgR1dNSU47IHJldmlzYSBgdHJhY2VgIHkgYG1vcnBoYCBlbiBsdWdhciBkZSBhc3VtaXIgcXXDqSBtb3RvciBjb3JyacOzLiBFbiBUZXJtdXggbyBXaW5kb3dzIGVsIGJpbmFyaW8gbmF0aXZvIHB1ZWRlIG5vIGVzdGFyIGluc3RhbGFkbyBvIG5vIHNlciBjb21wYXRpYmxlLCBhc8OtIHF1ZSBkZWJlIGVzcGVyYXJzZSBlc2EgZGVncmFkYWNpw7NuIHNhbHZvIHF1ZSBzZSBoYXlhIGNvbXBpbGFkby9jb25maWd1cmFkbyB1bm8gY29tcGF0aWJsZS4KLSAqKkhNQUMgeSBFZDI1NTE5IG5vIHNvbiBlcXVpdmFsZW50ZXM6KiogbGEgdG9vbCBgYXVkaXRfZ3JhcGhgIGZpcm1hIHBvciBITUFDLVNIQTI1NiB1c2FuZG8gYFpUR0VfSE1BQ19TRUNSRVRgOyB2ZXJpZmljYWNpw7NuIHJlcXVpZXJlIGNvbXBhcnRpciBlbCBtaXNtbyBzZWNyZXRvIHkgbm8gb2ZyZWNlIG5vIHJlcHVkaW8gZW50cmUgc3VzIHBvc2VlZG9yZXMuIEVsIGPDs2RpZ28gZGUgYXVkaXRvcsOtYSB0YW1iacOpbiB0aWVuZSB1dGlsaWRhZGVzIEVkMjU1MTkgcGFyYSBmaXJtYS92ZXJpZmljYWNpw7NuIGNvbiBjbGF2ZSBwcml2YWRhL3DDumJsaWNhLCBwZXJvIGVzdGEgaW50ZXJmYXogTUNQIG5vIGV4cG9uZSB1biBwYXLDoW1ldHJvIHBhcmEgZmlybWFyIGRpcmVjdGFtZW50ZSBjb24gRWQyNTUxOS4gTm8gYWZpcm1lcyBxdWUgYGF1ZGl0X2dyYXBoYCBwcm9kdWpvIHVuYSBmaXJtYSBFZDI1NTE5LgotICoqRmlybWEgbm8gY2VydGlmaWNhIGxhIHZlcmRhZCBkZSBlbnRyYWRhOioqIHVuIHNvYnJlIHZlcmlmaWNhIGludGVncmlkYWQvYXV0ZW50aWNpZGFkIHJlc3BlY3RvIGRlIGxhIGNsYXZlIHVzYWRhOyBubyBkZW11ZXN0cmEgcXVlIGVsIGdyYWZvLCBsYSBwcm9jZWRlbmNpYSBkZWNsYXJhZGEgbyBsYXMgYWZpcm1hY2lvbmVzIGRlIG5lZ29jaW8gc2VhbiB2ZXJkYWRlcmFzLgotICoqUHJpdmFjaWRhZCBsb2NhbDoqKiBlbCB0cmFuc3BvcnRlIGBzdGRpb2Agb3BlcmEgZW50cmUgcHJvY2Vzb3MgbG9jYWxlcywgcGVybyBsYSBzZWd1cmlkYWQgZGUgbGEgbcOhcXVpbmEsIGNvbmZpZ3VyYWNpw7NuIGRlbCBjbGllbnRlLCBsb2dzIHkgZ2VzdGnDs24gZGUgc2VjcmV0b3Mgc2lndWVuIHNpZW5kbyByZXNwb25zYWJpbGlkYWQgZGVsIGRlc3BsaWVndWUuCg==
+# PREDATOR MCP — guía para agentes de IA
+
+## Qué es PREDATOR
+
+PREDATOR es un coprocesador local y embebible para grafos: recibe una representación acotada del grafo, ejecuta algoritmos de planificación/análisis y devuelve resultados estructurados que el agente puede verificar. Su interfaz MCP usa transporte `stdio` y adapta los mismos handlers validados de la API HTTP; no requiere enviar el grafo a un servicio remoto.
+
+PREDATOR devuelve un conjunto independiente **válido**, pero no afirma que sea máximo ni óptimo. Mantén esa diferencia clara cuando expliques un resultado.
+
+## División de responsabilidades
+
+- **LLM = estratega:** identifica el problema, decide qué grafo representar, define qué significan nodos y aristas, selecciona el método/presupuesto y explica el resultado en contexto.
+- **PREDATOR = motor de ejecución:** recibe la estructura explícita, calcula el conjunto independiente, lo verifica y puede producir un informe de auditoría.
+
+**No resuelvas a mano la combinatoria pesada ni simules la búsqueda en texto.** Cuando la pregunta se traduzca a un problema de conjunto independiente, modela el grafo y delega el cálculo a `plan_independent_set`. Comprueba `verified` antes de usar el resultado como una solución válida. PREDATOR no determina por sí solo si el modelo del grafo representa correctamente la situación real.
+
+## Tools disponibles
+
+### `predator_status()`
+
+No recibe parámetros. Devuelve el estado real del handler `/v1/status`, con campos superiores `engine`, `version`, `clan_version`, `morph` y `contracts`. Consulta este resultado para saber si el binario MORPH está disponible y qué contratos se distribuyen. La forma de `morph` depende del estado: puede incluir `available`, `binary` y `reason` o `warning`.
+
+### `plan_independent_set(n, edges, directed=False, method="auto", budget_ms=100, seed=1, auto_n_threshold=1500)`
+
+Calcula y verifica un conjunto independiente.
+
+- `n` (entero, requerido): número de nodos. Numéralos consecutivamente de `0` a `n-1`.
+- `edges` (lista de pares de enteros, requerida): cada arista es `[origen, destino]`; ambos extremos deben estar en `[0, n)`.
+- `directed` (booleano, default `false`): indica si el grafo se interpreta como dirigido. El modelo y la verificación usan esta opción; el agente debe elegirla según el problema.
+- `method` (default `"auto"`): `"auto"`, `"gwmin"` o `"morph"`.
+- `budget_ms` (entero, default `100`, rango validado `[1, 600000]`): presupuesto solicitado al planificador; no es una garantía de tiempo máximo de pared.
+- `seed` (entero, default `1`): semilla para el planificador/MORPH.
+- `auto_n_threshold` (entero, default `1500`, mínimo `1`): umbral de tamaño que usa la política `auto` para elegir ruta.
+
+Respuesta satisfactoria real: `{ "nodes": [...], "size": entero, "verified": booleano, "trace": {...} }`. `nodes` contiene los IDs elegidos; `size` es su cantidad; `verified` confirma que el verificador detectó que forman un conjunto independiente en el grafo recibido; `trace` informa la ruta/resolución utilizada y puede incluir datos de fallback. Si la validación falla, la tool produce un error (el handler HTTP subyacente devuelve `validation_error` y detalles), no un resultado válido con esos cuatro campos.
+
+### `audit_graph(n, edges, directed=False, method="auto", budget_ms=100, seed=1, include_dense=True, k_core_k=3, graph_source=None, sign=True, key_id="hmac:default")`
+
+Ejecuta la auditoría sobre el mismo tipo de grafo y devuelve un informe `ztge.audit.v1`.
+
+- `n`, `edges`, `directed`, `method`, `budget_ms`, `seed`: mismos significados y defaults que en `plan_independent_set`.
+- `include_dense` (booleano, default `true`): incluye el análisis de estructuras densas.
+- `k_core_k` (entero, default `3`, mínimo `1`): parámetro `k` del análisis de k-core.
+- `graph_source` (texto o `null`, default `null`): procedencia/descripción del grafo para el informe.
+- `sign` (booleano, default `true`): solicita firma HMAC si `ZTGE_HMAC_SECRET` está configurada; si no hay secreto disponible, la respuesta queda sin firmar.
+- `key_id` (texto, default `"hmac:default"`): identificador descriptivo de la clave, no es la clave secreta.
+
+Respuesta satisfactoria real: `{ "report": {...}, "envelope": objeto_o_null, "signed": booleano }`. El `report` conserva el identificador `ztge.audit.v1`; `envelope` es un sobre firmado `ztge.envelope.v1` cuando se firmó y `null` en caso contrario. No afirmes que se firmó si `signed` no es `true`. Errores de validación se comunican como errores de tool.
+
+## Instalación y registro MCP
+
+Instala PREDATOR en el entorno de Python que vaya a usar el cliente MCP, incluyendo el extra MCP:
+
+```bash
+python -m pip install 'predator[mcp]'
+```
+
+El comando registrado por el paquete es `predator-mcp`. El cliente lo inicia como proceso local y se comunica por `stdio`. El comando debe estar en el `PATH` del proceso del cliente; si el cliente no hereda ese `PATH`, usa la ruta absoluta a `predator-mcp` o configura `command` como el intérprete Python con `args` apuntando a `-m predator.predator_server`.
+
+### Claude Desktop
+
+En el archivo de configuración MCP de Claude Desktop, agrega esta entrada bajo `mcpServers` (conserva las demás entradas que ya tengas):
+
+```json
+{
+  "mcpServers": {
+    "predator": {
+      "command": "predator-mcp",
+      "args": [],
+      "env": {
+        "ZTGE_HMAC_SECRET": "hex:<64-caracteres-hexadecimales>"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+En la configuración de proyecto `.cursor/mcp.json`, usa la misma estructura MCP:
+
+```json
+{
+  "mcpServers": {
+    "predator": {
+      "command": "predator-mcp",
+      "args": [],
+      "env": {
+        "ZTGE_HMAC_SECRET": "hex:<64-caracteres-hexadecimales>"
+      }
+    }
+  }
+}
+```
+
+Si `predator-mcp` no se encuentra desde el cliente, sustituye `command` y `args` por la ruta al Python del entorno donde instalaste el paquete, por ejemplo `"command": "/ruta/al/entorno/bin/python"`, `"args": ["-m", "predator.predator_server"]` (en Windows usa `python.exe` del entorno).
+
+Usa el mecanismo de secretos del cliente o del sistema para inyectar `ZTGE_HMAC_SECRET`; no guardes una clave real en un archivo versionado. El ejemplo `hex:<...>` es solo un marcador. Si la variable se omite, `audit_graph` puede devolver el reporte sin firma aunque `sign=true`. El secreto HMAC debe ser compartido de forma segura con quien verificará el informe.
+
+## Flujo recomendado
+
+1. Llama a `predator_status()` y revisa la disponibilidad de MORPH. No supongas que el binario está instalado.
+2. Traduce el problema a nodos y aristas; documenta qué representa cada uno. Valida que IDs estén en `0..n-1` y los extremos de aristas en rango.
+3. Llama a `plan_independent_set(...)` con el método y presupuesto adecuados.
+4. Comprueba `verified`. Si es `false` o la llamada falla, no presentes los nodos como una solución verificada.
+5. Explica la traza y cualquier fallback. No describas un resultado heurístico como óptimo.
+6. Llama a `audit_graph(...)` solo cuando necesites un informe estructurado y/o firma; confirma `signed=true` y que `envelope` no sea `null` antes de decir que está firmado.
+
+## Garantías y límites
+
+- **Heurística, no optimizador exacto:** `gwmin` es una heurística greedy; MORPH también es heurístico y no certifica optimalidad. `verified=true` valida independencia del conjunto, no que sea máximo ni que el grafo modelado sea correcto.
+- **Presupuesto no es timeout duro de pared:** `budget_ms` es un presupuesto para el algoritmo. El arranque del proceso, el sistema operativo y otros costos pueden hacer que el tiempo total observado sea mayor.
+- **Fallback por disponibilidad:** si el binario MORPH no existe o falla, la ruta de planificación puede degradar a GWMIN; revisa `trace` y `morph` en lugar de asumir qué motor corrió. En Termux o Windows el binario nativo puede no estar instalado o no ser compatible, así que debe esperarse esa degradación salvo que se haya compilado/configurado uno compatible.
+- **HMAC y Ed25519 no son equivalentes:** la tool `audit_graph` firma por HMAC-SHA256 usando `ZTGE_HMAC_SECRET`; verificación requiere compartir el mismo secreto y no ofrece no repudio entre sus poseedores. El código de auditoría también tiene utilidades Ed25519 para firma/verificación con clave privada/pública, pero esta interfaz MCP no expone un parámetro para firmar directamente con Ed25519. No afirmes que `audit_graph` produjo una firma Ed25519.
+- **Firma no certifica la verdad de entrada:** un sobre verifica integridad/autenticidad respecto de la clave usada; no demuestra que el grafo, la procedencia declarada o las afirmaciones de negocio sean verdaderas.
+- **Privacidad local:** el transporte `stdio` opera entre procesos locales, pero la seguridad de la máquina, configuración del cliente, logs y gestión de secretos siguen siendo responsabilidad del despliegue.
