@@ -1,4 +1,4 @@
-name: ZTGE CI
+name: PREDATOR CI
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y g++
       - name: Install package and test dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -e ".[yaml,dev,crypto]"
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[yaml,dev,crypto,mcp]"
       - name: Build MORPH
         run: make build-morph
       - name: Run tests
@@ -40,8 +40,8 @@ jobs:
         env:
           MORPH_DUMP_BIN: ${{ github.workspace }}/vendor/morph_src/dump_morph
         run: |
-          ztge-status
-          clan-detect --help
+          predator-status
+          predator-detect --help
       - name: Run deterministic planner performance smoke benchmark
         env:
           MORPH_DUMP_BIN: ${{ github.workspace }}/vendor/morph_src/dump_morph
@@ -61,5 +61,5 @@ jobs:
           test -n "$wheel"
           /tmp/ztge-clean-venv/bin/python -m pip install "${wheel}[yaml,crypto]"
           cd /tmp
-          /tmp/ztge-clean-venv/bin/ztge-status
-          /tmp/ztge-clean-venv/bin/clan-detect --help
+          /tmp/ztge-clean-venv/bin/predator-status
+          /tmp/ztge-clean-venv/bin/predator-detect --help

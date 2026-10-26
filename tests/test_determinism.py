@@ -5,7 +5,7 @@ import sys
 
 import pytest
 
-from ztge.determinism import Meter, best_of_k, code_identity, count_work, evidence_manifest, expected_work
+from predator.determinism import Meter, best_of_k, code_identity, count_work, evidence_manifest, expected_work
 
 _GLOBAL_CONFIG = {"threshold": 3}
 

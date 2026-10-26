@@ -3,14 +3,9 @@
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "vendor" / "clan_src"))
-
-from ztge.api.app import handle_request  # noqa: E402
+from predator.api.app import handle_request  # noqa: E402
 
 
 def test_health():
@@ -66,3 +61,4 @@ def test_audit_signed_when_secret_set():
     assert body["report"]["schema_version"] == "ztge.audit.v1"
     assert body["signed"] is True
     assert body["envelope"]["envelope_version"] == "ztge.envelope.v1"
+    assert body["envelope"]["producer"]["service"] == "predator"

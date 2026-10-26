@@ -3,9 +3,9 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "zero-trust-graph-engine"
+name = "predator"
 version = "0.1.0"
-description = "Zero-Trust Graph Engine — graph optimization, audited detection, and contract-verified native adapters"
+description = "PREDATOR — graph optimization and audited detection, with HTTP and MCP interfaces"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "See LICENSE" }
@@ -18,15 +18,22 @@ crypto = ["cryptography>=41.0"]
 dev = ["pytest>=7.0", "pyyaml>=6.0"]
 exact = ["ortools>=9.0"]
 api = ["fastapi>=0.110", "uvicorn[standard]>=0.27"]
+mcp = ["mcp>=1.0.0,<2.0.0"]
 
 [project.scripts]
-ztge-status = "clan_subnet_detector.status_cli:main"
+predator-status = "predator.status_entry:main"
+predator-detect = "clan_subnet_detector.cli:main"
+predator-api = "predator.api.server:main"
+predator-mcp = "predator.predator_server:main"
+# Backwards-compatible command aliases.
+ztge-status = "predator.status_entry:main"
 clan-detect = "clan_subnet_detector.cli:main"
-ztge-api = "ztge.api.server:main"
+
+[tool.setuptools]
 
 [tool.setuptools.packages.find]
 where = ["src", "vendor/clan_src"]
-include = ["ztge*", "clan_subnet_detector*"]
+include = ["predator*", "clan_subnet_detector*"]
 
 [tool.setuptools.package-data]
 clan_subnet_detector = ["py.typed"]

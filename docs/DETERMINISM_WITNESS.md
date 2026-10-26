@@ -8,7 +8,7 @@ must never change the verifier's verdict.
 ## Example
 
 ```python
-from ztge.determinism import best_of_k, code_identity, count_work, evidence_manifest
+from predator.determinism import best_of_k, code_identity, count_work, evidence_manifest
 
 identity = code_identity([verify_graph])  # use the actual Python verifier
 timing = best_of_k(verify_graph, graph, k=7, warmups=1)

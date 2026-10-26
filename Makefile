@@ -1,4 +1,4 @@
-.PHONY: build-morph test bench bench-quick bench-pareto bench-exact bench-all
+.PHONY: build-morph test bench bench-quick bench-pareto bench-exact bench-all api mcp
 
 build-morph:
 	$(MAKE) -C vendor/morph_src dump_morph
@@ -35,4 +35,7 @@ bench-pareto-dense: build-morph
 	  --budgets 10,50,100,500 --reps 5 --seed 42
 
 api:
-	PYTHONPATH=src:vendor/clan_src python -m ztge.api.server --host 127.0.0.1 --port 8080
+	predator-api --host 127.0.0.1 --port 8080
+
+mcp:
+	predator-mcp

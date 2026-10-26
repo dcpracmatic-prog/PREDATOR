@@ -1,4 +1,4 @@
-"""HTTP request handlers for Zero-Trust Graph Engine.
+"""HTTP request handlers for PREDATOR.
 
 Works without FastAPI: ``handle_request(method, path, body)`` returns
 ``(status_code, headers, body_dict)``. Optional ``create_app()`` returns a
@@ -8,15 +8,11 @@ FastAPI application when the package is installed.
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-# Ensure vendor package is importable when running from repo root
+# Import paths are provided by the installed distribution (src layout).
 _ROOT = Path(__file__).resolve().parents[3]
-_CLAN = _ROOT / "vendor" / "clan_src"
-if _CLAN.is_dir() and str(_CLAN) not in sys.path:
-    sys.path.insert(0, str(_CLAN))
 
 from clan_subnet_detector import (  # noqa: E402
     Graph,
@@ -33,7 +29,7 @@ from clan_subnet_detector.audit.signing import secret_from_env  # noqa: E402
 from .openapi_doc import load_openapi
 from .validation import validate_audit_request, validate_plan_request
 
-ENGINE = "zero-trust-graph-engine"
+ENGINE = "predator"
 ENGINE_VERSION = "0.1.0"
 
 JsonDict = Dict[str, Any]
@@ -138,7 +134,7 @@ def handle_audit(body: Any) -> HandlerResult:
                 v1,
                 secret,
                 key_id=req["key_id"],
-                producer={"organization": "dcpracmatic-prog", "service": ENGINE},
+                producer={"organization": "dcpracmatic-prog", "service": "predator"},
             )
             signed = True
 
@@ -182,12 +178,12 @@ def create_app():
         from fastapi.responses import JSONResponse
     except ImportError as e:
         raise ImportError(
-            "FastAPI is optional. Use `python -m ztge.api.server` (stdlib) "
+            "FastAPI is optional. Use `predator-api` (stdlib) "
             "or `pip install fastapi uvicorn`."
         ) from e
 
     app = FastAPI(
-        title="Zero-Trust Graph Engine API",
+        title="PREDATOR HTTP API",
         version=ENGINE_VERSION,
         license_info={"name": "AGPL-3.0"},
     )

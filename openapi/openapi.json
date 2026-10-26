@@ -1,9 +1,9 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Zero-Trust Graph Engine API",
+    "title": "PREDATOR HTTP API",
     "version": "0.1.0",
-    "description": "Fachada HTTP B2B sobre planificador IS y auditor\u00eda firmable (ztge.audit.v1 / ztge.envelope.v1).",
+    "description": "Fachada HTTP B2B sobre planificador IS y auditoría firmable (ztge.audit.v1 / ztge.envelope.v1).",
     "license": {
       "name": "AGPL-3.0",
       "url": "https://www.gnu.org/licenses/agpl-3.0.html"

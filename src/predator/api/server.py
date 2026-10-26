@@ -1,12 +1,12 @@
-"""stdlib HTTP server for ZTGE API (no third-party deps).
+"""stdlib HTTP server for PREDATOR API (no third-party deps).
 
 Usage
 -----
-    PYTHONPATH=src:vendor/clan_src python -m ztge.api.server --host 127.0.0.1 --port 8080
+    python -m predator.api.server --host 127.0.0.1 --port 8080
 
 Or after install::
 
-    ztge-api --port 8080
+    predator-api --port 8080
 """
 
 from __future__ import annotations
@@ -19,17 +19,11 @@ from pathlib import Path
 from typing import Tuple
 from urllib.parse import urlparse
 
-# bootstrap path for repo layout
-_ROOT = Path(__file__).resolve().parents[3]
-for p in (_ROOT / "src", _ROOT / "vendor" / "clan_src"):
-    if p.is_dir() and str(p) not in sys.path:
-        sys.path.insert(0, str(p))
-
-from ztge.api.app import handle_request  # noqa: E402
+from predator.api.app import handle_request  # noqa: E402
 
 
-class ZTGEHandler(BaseHTTPRequestHandler):
-    server_version = "ZTGE/0.1"
+class PredatorHandler(BaseHTTPRequestHandler):
+    server_version = "PREDATOR/0.1"
 
     def log_message(self, fmt: str, *args) -> None:
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
@@ -85,12 +79,12 @@ class _InvalidJSON:
 
 
 def main(argv: list[str] | None = None) -> None:
-    p = argparse.ArgumentParser(description="ZTGE HTTP API (stdlib)")
+    p = argparse.ArgumentParser(description="PREDATOR HTTP API (stdlib)")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8080)
     args = p.parse_args(argv)
-    httpd = ThreadingHTTPServer((args.host, args.port), ZTGEHandler)
-    print(f"ZTGE API listening on http://{args.host}:{args.port}", flush=True)
+    httpd = ThreadingHTTPServer((args.host, args.port), PredatorHandler)
+    print(f"PREDATOR API listening on http://{args.host}:{args.port}", flush=True)
     print("  GET  /health  /v1/status  /openapi.json", flush=True)
     print("  POST /v1/plan  /v1/audit", flush=True)
     try:

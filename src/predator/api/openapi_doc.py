@@ -22,7 +22,7 @@ def load_openapi() -> Dict[str, Any]:
     return {
         "openapi": "3.1.0",
         "info": {
-            "title": "Zero-Trust Graph Engine API",
+            "title": "PREDATOR HTTP API",
             "version": "0.1.0",
             "description": "HTTP facade (embedded fallback document).",
         },

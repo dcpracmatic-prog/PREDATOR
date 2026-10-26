@@ -19,7 +19,6 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "vendor" / "clan_src"))
 
 from clan_subnet_detector.detection.independent_set import is_independent, plan_independent  # noqa: E402
 from clan_subnet_detector.detection.morph_adapter import morph_status  # noqa: E402
