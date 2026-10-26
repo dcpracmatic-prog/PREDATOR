@@ -283,3 +283,25 @@ def test_real_morph_json_api_passes_python_graph_limits_to_native(monkeypatch, t
                                            byte_length=len(payload))
     assert result[0] == 400
     assert result[2]["error"] == "native_solver_rejected_input"
+
+
+def test_native_stream_route_with_real_morph_executable(monkeypatch, tmp_path):
+    """End-to-end request staging -> JSON-mode MORPH -> API response (no fake solver)."""
+    binary = os.getenv("MORPH_DUMP_BIN")
+    if not binary or not Path(binary).is_file():
+        pytest.skip("MORPH_DUMP_BIN is unavailable; real native route requires compiled CI target")
+    payload = json.dumps({"graph": {"n": 5, "edges": [[0, 1], [1, 2], [3, 4]]},
+                          "method": "morph", "budget_ms": 10, "seed": 13}).encode()
+    monkeypatch.setenv("MORPH_DUMP_BIN", binary)
+    monkeypatch.setenv("PREDATOR_NATIVE_MAX_REQUEST_BYTES", str(1024 * 1024))
+    monkeypatch.setenv("PREDATOR_NATIVE_MAX_VERTICES", "100")
+    monkeypatch.setenv("PREDATOR_NATIVE_MAX_EDGES", "100")
+    request = _handler(payload, _request(payload, hashlib.sha256(payload).hexdigest()))
+    PredatorHandler._stream_native_json_file(request)
+    status, _, response = request._write.call_args.args
+    assert status == 200, response
+    assert response["verified"] is True
+    assert response["trace"]["native_json"] is True
+    assert response["trace"]["streamed_bytes"] == len(payload)
+    assert response["trace"]["n"] == 5
+    assert response["trace"]["m"] == 3
