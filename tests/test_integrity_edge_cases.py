@@ -3,6 +3,7 @@ from __future__ import annotations
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from clan_subnet_detector.audit.schema import validate_report
 from clan_subnet_detector.audit.signing import (
     ed25519_verify,
     hmac_verify,
@@ -102,3 +103,31 @@ def test_signed_envelope_verifiers_fail_closed_on_malformed_shapes_and_non_json_
 def test_crypto_verifiers_reject_malformed_keys_and_secret_types_without_crashing():
     assert hmac_verify("abcd", "00", "not-bytes") is False
     assert ed25519_verify("abcd", "00", b"not-a-public-key") is False
+
+
+def test_historical_ztge_payload_remains_cryptographically_verifiable():
+    # Historical reports retain the signature over their original bytes; the
+    # current schema validator intentionally checks the new PREDATOR identity.
+    historical = {
+        "schema_version": "ztge.audit.v1",
+        "report_id": "legacy-001",
+        "timestamp_utc": "2024-01-01T00:00:00Z",
+        "engine": {"name": "clan_subnet_detector", "version": "0.1.0"},
+        "graph": {"n": 1, "m": 0, "density": 0, "n_components": 1},
+        "findings": [], "checks": {}, "content_hash": "",
+    }
+    envelope = sign_report_hmac(historical, b"legacy-secret", producer={"service": "clan_subnet_detector"})
+    assert verify_envelope_hmac(envelope, b"legacy-secret") == (True, "ok")
+    assert validate_report(envelope["payload"])[0] is False
+
+
+def test_hmac_verifier_rejects_bad_signature_missing_key_and_unsupported_algorithm():
+    envelope = sign_report_hmac({"schema_version": "ztge.audit.v1", "value": 3}, b"right")
+    bad_signature = {**envelope, "integrity": {**envelope["integrity"], "signature": "00"}}
+    assert verify_envelope_hmac(bad_signature, b"right")[0] is False
+    assert verify_envelope_hmac(envelope, b"wrong")[0] is False
+    missing_integrity = {**envelope}; missing_integrity.pop("integrity")
+    assert verify_envelope_hmac(missing_integrity, b"right")[0] is False
+    unsupported = {**envelope, "integrity": {**envelope["integrity"], "alg": "UNKNOWN"}}
+    ok, reason = verify_envelope_hmac(unsupported, b"right")
+    assert not ok and "unexpected alg" in reason

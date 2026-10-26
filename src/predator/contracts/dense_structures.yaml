@@ -1,0 +1,25 @@
+# Zero-Trust Graph Engine — k-core and densest-subgraph peeling
+name: dense_structures
+version: "0.2.0"
+language: python
+library: clan_subnet_detector.detection.dense
+abi: pure_python
+description: Dense-structure detectors used in the audit pipeline.
+
+functions:
+  - name: k_core
+    description: Nodes belonging to the k-core of g
+    returns: {type: list_int}
+    parameters:
+      - {name: g, type: Graph, direction: in}
+      - {name: k, type: int, direction: in, constraints: [1, 1000000]}
+
+  - name: densest_subgraph_peeling
+    description: Charikar-style peeling approximation of densest subgraph
+    returns:
+      type: object
+      fields:
+        - {name: nodes, type: list_int}
+        - {name: density, type: float64}
+    parameters:
+      - {name: g, type: Graph, direction: in}

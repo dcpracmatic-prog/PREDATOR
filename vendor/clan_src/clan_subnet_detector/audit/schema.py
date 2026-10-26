@@ -23,8 +23,8 @@ def validate_report(report: Mapping[str, Any]) -> Tuple[bool, List[str]]:
             errors.append(f"missing required field: {key}")
     engine = report.get("engine")
     if isinstance(engine, dict):
-        if engine.get("name") != "zero-trust-graph-engine":
-            errors.append("engine.name must be zero-trust-graph-engine")
+        if engine.get("name") != "predator":
+            errors.append("engine.name must be predator")
         if "version" not in engine:
             errors.append("engine.version required")
     else:

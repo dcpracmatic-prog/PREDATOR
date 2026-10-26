@@ -62,3 +62,18 @@ def test_audit_signed_when_secret_set():
     assert body["signed"] is True
     assert body["envelope"]["envelope_version"] == "ztge.envelope.v1"
     assert body["envelope"]["producer"]["service"] == "predator"
+
+
+def test_health_status_contracts_list_is_included():
+    code, _, body = handle_request("GET", "/v1/status")
+    assert code == 200
+    assert {"clique.yaml", "independent_set.yaml"} <= set(body["contracts"])
+
+
+def test_audit_report_payload_uses_predator_engine_name():
+    code, _, body = handle_request("POST", "/v1/audit", {
+        "graph": {"n": 3, "edges": [[0, 1], [1, 2]]}, "method": "gwmin", "sign": False,
+    })
+    assert code == 200
+    assert body["report"]["engine"]["name"] == "predator"
+    assert body["report"]["schema_version"] == "ztge.audit.v1"

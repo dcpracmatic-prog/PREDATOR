@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://dcpracmatic-prog.github.io/Zero-Trust-Graph-Engine/schemas/ztge_audit_report.schema.json",
-  "title": "ZTGE Audit Report",
-  "description": "Machine-readable audit report produced by Zero-Trust Graph Engine. Designed for independent re-verification by external auditors.",
+  "title": "PREDATOR Audit Report",
+  "description": "Machine-readable audit report produced by PREDATOR. Designed for independent re-verification by external auditors.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -36,7 +36,7 @@
       "additionalProperties": false,
       "required": ["name", "version"],
       "properties": {
-        "name": { "type": "string", "const": "zero-trust-graph-engine" },
+        "name": { "type": "string", "const": "predator" },
         "version": { "type": "string" },
         "clan_version": { "type": "string" },
         "python": { "type": "string" },
