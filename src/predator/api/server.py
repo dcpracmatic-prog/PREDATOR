@@ -19,7 +19,7 @@ from ipaddress import ip_address
 from urllib.parse import urlparse
 
 from predator.api.app import handle_request  # noqa: E402
-from predator.api.security import auth_configured, cors_headers, is_authorized, origin_is_allowed
+from predator.api.security import auth_configured, cors_headers, is_authorized, max_request_bytes, origin_is_allowed
 
 
 class PredatorHandler(BaseHTTPRequestHandler):
@@ -90,14 +90,36 @@ class PredatorHandler(BaseHTTPRequestHandler):
             return
         if not self._authorized("POST", path):
             return
+        # BaseHTTPRequestHandler does not decode chunked request bodies. Refuse
+        # transfer encodings explicitly rather than treating them as an empty body.
+        transfer_encoding = self.headers.get("Transfer-Encoding")
+        if transfer_encoding:
+            self._write(400, {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "unsupported_transfer_encoding"})
+            return
+        if hasattr(self.headers, "get_all"):
+            lengths = self.headers.get_all("Content-Length", [])
+        else:  # simple mapping in direct handler unit tests
+            value = self.headers.get("Content-Length")
+            lengths = [] if value is None else [value]
+        if len(lengths) != 1 or not str(lengths[0]).isdecimal():
+            self._write(400, {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "invalid_content_length"})
+            return
         try:
-            length = int(self.headers.get("Content-Length") or 0)
+            length = int(lengths[0])
         except ValueError:
             length = -1
-        if length < 0 or length > 1_048_576:
-            self._write(413 if length > 1_048_576 else 400,
+        try:
+            body_limit = max_request_bytes()
+        except ValueError as exc:
+            self._write(500, {"Content-Type": "application/json; charset=utf-8"},
+                        {"error": "invalid_server_configuration", "details": [str(exc)]})
+            return
+        if length < 0 or length > body_limit:
+            self._write(413 if length > body_limit else 400,
                         {"Content-Type": "application/json; charset=utf-8"},
-                        {"error": "request_too_large" if length > 1_048_576 else "invalid_content_length"})
+                        {"error": "request_too_large" if length > body_limit else "invalid_content_length"})
             return
         payload = self._read_json()
         if isinstance(payload, _InvalidJSON):
@@ -120,6 +142,10 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8080)
     args = p.parse_args(argv)
+    try:
+        max_request_bytes()  # fail fast on an invalid operator override
+    except ValueError as exc:
+        p.error(str(exc))
     try:
         is_loopback = ip_address(args.host).is_loopback
     except ValueError:

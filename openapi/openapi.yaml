@@ -93,7 +93,7 @@ components:
           type: string
     Status:
       type: object
-      required: [engine, version, morph]
+      required: [engine, version, morph, resources, max_request_bytes]
       properties:
         engine:
           type: string
@@ -104,6 +104,12 @@ components:
         morph:
           type: object
           additionalProperties: true
+        resources:
+          type: object
+          additionalProperties: true
+        max_request_bytes:
+          type: integer
+          minimum: 1
         contracts:
           type: array
           items:
@@ -115,9 +121,11 @@ components:
         n:
           type: integer
           minimum: 0
-          description: Number of nodes (0 .. n-1)
+          maximum: 2000000
+          description: Number of nodes (0 .. n-1), further bounded by available host memory
         edges:
           type: array
+          maxItems: 10000000
           items:
             type: array
             minItems: 2
@@ -146,6 +154,7 @@ components:
           default: 100
         seed:
           type: integer
+          minimum: 0
           default: 1
         auto_n_threshold:
           type: integer
@@ -183,6 +192,7 @@ components:
           default: 100
         seed:
           type: integer
+          minimum: 0
           default: 1
         sign:
           type: boolean

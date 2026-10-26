@@ -24,6 +24,7 @@ mcp = ["mcp>=1.0.0,<2.0.0"]
 predator-status = "predator.status_entry:main"
 predator-detect = "clan_subnet_detector.cli:main"
 predator-api = "predator.api.server:main"
+predator-hardware-profile = "predator.hardware_profile:main"
 predator-mcp = "predator.predator_server:main"
 # Backwards-compatible command aliases.
 ztge-status = "predator.status_entry:main"
