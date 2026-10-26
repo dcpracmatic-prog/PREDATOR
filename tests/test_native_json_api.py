@@ -171,6 +171,22 @@ def test_native_stream_large_payload_over_one_mib_reaches_solver(monkeypatch, tm
 
 
 
+def test_fastapi_cors_preflight_allows_native_sha256_header(monkeypatch):
+    pytest.importorskip("fastapi")
+    from fastapi.testclient import TestClient
+    from predator.api.app import create_app
+
+    monkeypatch.setenv("PREDATOR_CORS_ORIGINS", "https://trusted.example")
+    with TestClient(create_app()) as client:
+        response = client.options("/v1/plan/native-file", headers={
+            "Origin": "https://trusted.example",
+            "Access-Control-Request-Method": "POST",
+            "Access-Control-Request-Headers": "content-type, x-content-sha256",
+        })
+    assert response.status_code == 204
+    assert "x-content-sha256" in response.headers["access-control-allow-headers"].lower()
+
+
 def test_fastapi_native_endpoint_uses_native_upload_cap_not_ordinary_cap(monkeypatch, tmp_path):
     fastapi = pytest.importorskip("fastapi")
     from fastapi.testclient import TestClient
